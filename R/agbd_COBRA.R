@@ -20,7 +20,8 @@ registerDoMC(5) # parallel processing
 #############################################
 
 # ----- carrega dados simulados de Human Guide
-source("./R/f_leRawCobra.R")
+#source("./R/f_leRawCobra.R")
+source("~/Documents/MyGit/COBRA/R/agbd_COBRA.R")
 l_acordo <- f_leRawCobra()
 
 # Fazer a análise abaixo sobre duas premissas:
