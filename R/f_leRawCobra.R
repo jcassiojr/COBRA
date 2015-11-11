@@ -57,6 +57,7 @@ f_leRawCobra <- function() {
     # a ser usada para aplicar modelo preditivo
     # obs: salvar os dados da planilha original Avon em csv para preformance
     df_cliav_cobr <- read.csv("./data/Clientes Avon-cass-cobr.csv", header = TRUE)
+    
     #df_cliav_cobr <-
     #    df_cliav_cobr %>%
     #    mutate (tipo.cobranca = "cobravel") # criando coluna para classificar tipo cobranca

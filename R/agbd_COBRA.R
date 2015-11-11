@@ -17,11 +17,26 @@ registerDoMC(5) # parallel processing
 #############################################
 ## DATA PREPARATION
 ## agrupar coluna hora.acion truncando por hora
+## carregar como dados de uso para previsão dados novos ainda não rodados
+## para dados de uso para previsão precisamos ter atributos: 
+## Valor (da carteira), 
+## Cobrável: Se é cobravel, incobravel , 3a onda,(da carteira)
+## Cidade do cliente (da carteira)
+## Operador (previsto para acionamento)
+## Dia da semana (previsto para acionamento)
+## Hora (prevista para acionamento)
+## e se quiser prever melhor dia da semana?
+## R: montar tabela com dados previstos de acionamento. Obter as probabilidades,
+##    ordenar por Operador/dia da semana e pegar os de maior probabilidade.
+##    ver quantos conseguem por dia para corte
+
+## outra abordagem: considerar modelo somente com dados carteira. Depois com um 
+## atributo de acionamento por vez
 #############################################
 
 # ----- carrega dados simulados de Human Guide
 #source("./R/f_leRawCobra.R")
-source("~/Documents/MyGit/COBRA/R/agbd_COBRA.R")
+source("~/Documents/MyGit/COBRA/R/f_leRawCobra.R")
 l_acordo <- f_leRawCobra()
 
 # Fazer a análise abaixo sobre duas premissas:
@@ -56,6 +71,22 @@ if(length(trn_nzvar) != 0  || length(tst_nzvar) != 0) {
     trainDescr <- trainDescr[,-(trn_nzvar)]
     testDescr <- testDescr[,-(tst_nzvar)]
 }
+# testar com somente dados de carteira (Muito boa curva ROC!!)
+trainDescr <- trainDescr[,c(2,3,6)]
+testDescr <- testDescr[,c(2,3,6)]
+# repetir a análise separadamente somente dados de acionamento  (Curva ROC boa também)
+trainDescr <- trainDescr[,c(1,4,5)]
+testDescr <- testDescr[,c(1,4,5)]
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Combinar os dois casos, testando dados de previsão para ambos separados,
+# combinando as maiores probabilidades de carteira e acionamento (como?)
+# Ex. cliente X tem 90%, o mesmo cliente tem 70% com operador/data/hora
+# Ex. cliente Y tem 20%, o mesmo cliente tem 90% com operador/dia semana/hora
+# colocar como peso a multiplicaão da duas, e alimentar
+# matriz de ligações por operador/ dia semana/hora
+# ex. cliente A, para Operador B, no dia de semana X, hora Y
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #----- eliminando features com menor importância (funciona com features numéricas ou categóricas)
 # outra importante técnica de separar features importantes
 require(MASS)
