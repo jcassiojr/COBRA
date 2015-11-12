@@ -77,7 +77,9 @@ testDescr <- testDescr[,c(2,3,6)]
 # repetir a análise separadamente somente dados de acionamento  (Curva ROC boa também)
 trainDescr <- trainDescr[,c(1,4,5)]
 testDescr <- testDescr[,c(1,4,5)]
-
+# repetir a análise com dados de carteira e acionamento  (Curva ROC melhor de todas)
+#trainDescr <- trainDescr[,c(1,4,5)]
+#testDescr <- testDescr[,c(1,4,5)]
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Combinar os dois casos, testando dados de previsão para ambos separados,
 # combinando as maiores probabilidades de carteira e acionamento (como?)
@@ -124,8 +126,11 @@ print(svm_cf$byClass)
 print(svm_cf$overall)
 # making a prediction object
 pred <- prediction(probValues$S, probValues$obs)
-
+# ROC curve
 roc.perf = performance(pred, measure = "tpr", x.measure = "fpr")
+# AUC
+roc.auc = performance(pred, measure = "auc")
+auc <- roc.auc@y.values
 # Plot roc. objects (para cada modelo)
 #-----------------
 plot(roc.perf)
@@ -149,6 +154,20 @@ df_otpm <- data.frame (my_pred = roc.perf@alpha.values[[1]])
 df_otpm <-
     df_otpm %>%
     filter (df_otpm >= valor_cutoff)
+
+# outrso plots ROC
+# lift plot
+roc.perf = performance(pred, measure = "lift", x.measure = "rpp")
+# Plot roc. objects (para cada modelo)
+#-----------------
+plot(roc.perf)
+abline(a=0, b= 1)
+# sens/spec
+roc.perf = performance(pred, measure = "sens", x.measure = "spec")
+# Plot roc. objects (para cada modelo)
+#-----------------
+plot(roc.perf)
+abline(a=0, b= 1)
 # ---------------- A tree induction to observe best features
 #form <- as.formula(acordo ~ .)
 #tree.2 <- rpart(form,cbind(acordo = trainClass,trainDescr[,-c(2,4)]))		# A more reasonable tree
