@@ -13,8 +13,9 @@
 # features a usar de clientes Avon e Pgto: CPF, Valor/Valor.Acordo (de pgtos), Contrato
 
 require("xlsx")
-require("dplyr")
-require("doMC")
+#require("dplyr")
+#require("doMC")
+#require("lubridate")
 
 f_leRawCobra <- function() {
     registerDoMC(5) # parallel processing
