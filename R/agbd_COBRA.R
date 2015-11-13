@@ -4,12 +4,12 @@ require("caret")
 #library(devtools)
 #install_version("colorspace", "1.2-4") # para não carregar X11 no ggplot2 (não funcionou!)
 #require("ggplot2")
-require("pROC")
+#require("pROC")
 require("ROCR")
-require("rpart")
-require("rattle")					# Fancy tree plot
-require("rpart.plot")
-library(lubridate)
+#require("rpart")
+#require("rattle")					# Fancy tree plot
+#require("rpart.plot")
+library("lubridate")
 require("doMC")
 
 registerDoMC(5) # parallel processing
@@ -37,7 +37,17 @@ registerDoMC(5) # parallel processing
 # ----- carrega dados simulados de Human Guide
 #source("./R/f_leRawCobra.R")
 source("~/Documents/MyGit/COBRA/R/f_leRawCobra.R")
-l_acordo <- f_leRawCobra()
+l_pagos <- f_leRawCobra()
+
+# obtem os data.frames preparados
+df_cobr <- l_pagos[[1]]
+df_incobr <- l_pagos[[2]]
+df_3fase <- l_pagos[[3]]
+
+# prior probs das tabelas lidas
+prop.table(table(df_acion_cobr_tidy$acordo))   # sucesso de 0.9 %
+prop.table(table(df_acion_incobr_tidy$acordo)) # sucesso de 2.6 %
+prop.table(table(df_acion_3Fase_tidy$acordo))  # suceso de 26.6 %
 
 # Fazer a análise abaixo sobre duas premissas:
 #--------------------------------------------------------------------------------
