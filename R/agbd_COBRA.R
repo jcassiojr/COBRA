@@ -76,6 +76,7 @@ df_cutoff <-
     filter (df_rank >= valor_cutoff)
 
 # prints
+print(aic$formula)
 sprintf("AIC Cobravel: %.2f",aic$aic)
 sprintf("Cobravel - %s : %.4f",roc.auc@y.name,roc.auc@y.values)
 sprintf("Cobravel - Valor de Cutoff-ROC Best Balance : %.4f",valor_cutoff)

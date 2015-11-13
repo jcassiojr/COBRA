@@ -11,7 +11,9 @@ f_train_model <- function(df_in) {
  
     #selecionando as features e target em arquivos diferentes
     class <- as.factor(df_in[,"pago"]) # transformando em vetor de fatores de target
-    descr <- df_in[,c(3,5,10,11,12)] # transformando em dataframe de features
+    # usando Operador, Cidade, diasem.acion, hora.acion, valGroups
+    #descr <- df_in[,c(3,5,10,11,12)] # transformando em dataframe de features
+    descr <- df_in[,c(3,10,11,12)] # tirando cidade para teste enquanto não tem
     # ----- cria datasets de treino, teste e uso em previsão
     set.seed(1)
     inTrain <- createDataPartition(class, p = 3/4, list = FALSE)
