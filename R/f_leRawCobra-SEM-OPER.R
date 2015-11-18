@@ -9,14 +9,15 @@
 #    por Contrato e depois mesclar resultado com arquivo Acordo por CPF)
 # 4. criar variavel target pgto=S/N
 # 5. preparar as features para serem usadas
-
+# rodar o comando abaixo se tiver problema de memoria java no read.xlsx2()
+options(java.parameters = "-Xmx2000m")
 # features a usar de clientes Avon e Pgto: CPF, Valor/Valor.Acordo (de pgtos), Contrato
 
 require("xlsx")
-require("data.table")
-#require("dplyr")
+#require("data.table")
+require("dplyr")
 #require("doMC")
-#require("lubridate")
+require("lubridate")
 
 f_leRawCobra <- function() {
     # constantes
@@ -72,11 +73,21 @@ f_leRawCobra <- function() {
     #-----------------------------------------------------------
     
     # ler planilha com dados de acionamentos
-    df_acion <- read.xlsx2("./data/Acionamentos out e nov 2015-raw.xlsx", sheetIndex = 1, header = TRUE)
+    
+    df_acion_cobr <- read.xlsx2("./data/acion-jan15-raw.xlsx", sheetIndex = "COBR",  header = TRUE)
+    df_acion_incobr <- read.xlsx2("./data/acion-jan15-raw.xlsx", sheetIndex = "INCOBR",  header = TRUE)
+    df_acion_3fase <- read.xlsx2("./data/acion-jan15-raw.xlsx", sheetIndex = "3FASE",  header = TRUE)
     # acertando a coluna data que no excel está numérica
-    df_acion <-
-        df_acion %>%
-        mutate (Data.Agendamento = as.Date(as.numeric(paste(Data.Agendamento)), origin="1899-12-30") )   
+    df_acion_cobr <-
+        df_acion_cobr %>%
+        mutate (Data.Agendamento = as.Date(as.numeric(paste(Data.Agendamento)), origin="1899-12-30") )
+    df_acion_incobr <-
+        df_acion_incobr %>%
+        mutate (Data.Agendamento = as.Date(as.numeric(paste(Data.Agendamento)), origin="1899-12-30") )
+    df_acion_3fase <-
+        df_acion_3fase %>%
+        mutate (Data.Agendamento = as.Date(as.numeric(paste(Data.Agendamento)), origin="1899-12-30") )
+    
     #--------------------------------------
     # prepara dados para uso em previsão (testando para incobraveis)
     #--------------------------------------
@@ -108,6 +119,43 @@ f_leRawCobra <- function() {
     df_pg <- df_pg %>% mutate (Valor = as.numeric(Valor)) # para acerto do merge com cliav
     df_pg <- df_pg %>% mutate (CPF = as.character(CPF)) # para acerto do merge com cliav
     
+    # IMPORTANTE: o certo seria ler cada obs de PGTO do Recebimento mais recente para trás
+    # procurando nos acionamentos concatenados de todo 2015 o Acionamento mais recente
+    # e então marcar como pago = S
+    df_pg_sort <- # ordena por ordem decrescente de data de Recebimento
+        df_pg %>%
+        arrange(desc(Recebimento)) 
+    df_acion_3fase_sort <- # ordena por ordem decrescente de data de Recebimento
+        df_acion_3fase %>%
+        arrange(desc(Acionamento)) %>%
+        mutate( pago = "N") # inicializa nova coluna pago como N
+    # alternativa: merge antes por contrato e selecionar o max data de Recebimento e de Acionamento
+    # entao pegar dt receb >= dt acionamento
+    
+    # obs: outra melhor: PG: ordenar por contrato e desc(Recebimento) e pegar min(recebimento)
+    # eliminr duplicidade de contratos
+    # AC: ordenar idem, selecionar max(Dt acionamento) e tirar duplicidade
+    # merge dos dois como já faço
+    # duas abordagens de modelo: preditivo como já fiz mas tirando dia.sem e hora.acion
+    # pois não tem sentido, não sabemso quela a ligaçao que converteu
+    # o outro seria correlaçao entre sucesso de achar o contato e dia semana para fazer
+    # heatmap omostrando maior probabilidade de contato
+    # lider pega o heatmap e concentra os melhores probabilidades prevista no modelo e 
+    # concentra-os nos melhores horários
+    # uma terceira via é correlação operador x sucesso no pgto
+    # combinando as 3 abordagens temo o melhor modelo
+    for (i in 1:nrow(df_pg_sort)) {
+        contrato_pg <- df_pg_sort$Contrato
+        dt_receb_pg <- df_pg_sort$Recebimento
+        for (j in nrow(df_acion_3fase_sort)) { # depois trocar pelo acion_3fase 2015
+            if (contrato_pg == df_acion_3fase_sort$Contrato & 
+                dt_receb_pg >= df_acion_3fase_sort$Acionamento) {
+                # se entrou, achou e Não deve entrar mais para o contrato
+                # deve criar coluna pago para depois fazer o merge c acion
+                df_acion_3fase_sort$pago[j] <- "S"
+            }
+        }
+    }
     # combina este dataframe com o de acionamentos para obter
     # acionamentos que obtiveram sucesso no pgto. pgto = S
     # merge com arquivo de pgtos para ver quais se 
@@ -115,8 +163,15 @@ f_leRawCobra <- function() {
     # pgto = S/N
     # escopo: merge com todas as ocorrências de df_acion, 
     # somente as ocorrencias de df_pg que aparecem em ambos e com duplicações mantidas
-    df_acion_pg <- left_join(df_acion, df_pg,by=c("Contrato"))
+    df_acion_cobr_pg <- left_join(df_acion_cobr, df_pg,by=c("Contrato"))
+    df_acion_incobr_pg <- left_join(df_acion_incobr, df_pg,by=c("Contrato"))
+    df_acion_3fase_pg <- left_join(df_acion_3fase, df_pg,by=c("Contrato"))
     
+    
+    # PAREI AQUI
+    
+        
+    }
     # TEMP: selecionando pagamentos com Recebimento maior ou igual ao primeiro mês de 
     # acionamento considerado para os treinos. Para garantir causa/efeito
     
