@@ -99,16 +99,11 @@ f_leRawCobra_Avon <- function(in_aaaamm) {
         filter(!is.na(CPF.y)) %>% # deixando somente acionamentos de clientes Avon
         select(CPF = CPF.x,  everything()) %>%
         select(-CPF.y)
-    
-        
-        
-        
-        
         
     # INCOBRAVEIS
     #-----------------
+    df_acion_incobr <- read.xlsx2(paste0("./data/acion-", in_aaaamm, "-raw.xlsx"), sheetIndex = "INCOBR",  header = TRUE)
     
-    df_acion_incobr <- read.xlsx2("./data/acion-jan15-raw.xlsx", sheetIndex = "INCOBR",  header = TRUE)
     df_acion_incobr <-
         df_acion_incobr %>%
         mutate (Data.Agendamento = ymd(as.Date(as.numeric(paste(Data.Agendamento)), origin="1899-12-30")),
@@ -145,8 +140,8 @@ f_leRawCobra_Avon <- function(in_aaaamm) {
     
     # 3a FASE
     #-----------------
+    df_acion_3fase <- read.xlsx2(paste0("./data/acion-", in_aaaamm, "-raw.xlsx"), sheetIndex = "3FASE",  header = TRUE)
     
-    df_acion_3fase <- read.xlsx2("./data/acion-jan15-raw.xlsx", sheetIndex = "3FASE",  header = TRUE)
     df_acion_3fase <-
         df_acion_3fase %>%
         mutate (Data.Agendamento = ymd(as.Date(as.numeric(paste(Data.Agendamento)), origin="1899-12-30")),
@@ -253,13 +248,14 @@ f_leRawCobra_Avon <- function(in_aaaamm) {
         select (-CPF.y, -Recebimento) %>%
         mutate(Valor = ifelse(pago == "S", Valor.Pago,Valor)) %>% # se pago, considera valor pgto sobre devido
         select (-Valor.Pago) # elimina coluna antiga
+    
     df_acion_cobr_pg <-
         df_acion_cobr_pg %>%
         mutate (Diasem.Acion = wday(Acionamento, label = TRUE),
                 Hora.Acion = hour(Acionamento))
     
     # criando colunas de quantiles para valor para ser usada como classificador
-    df_acion_cobr_pg$Faixa.Valores = cut(df_acion_cobr_pg$Valor,breaks=quantile(df_acion_cobr_pg$Valor))
+    df_acion_cobr_pg$Faixa.Valores = cut(df_acion_cobr_pg$Valor,breaks=quantile(df_acion_cobr_pg$Valor), include.lowest = TRUE)
     # eliminando a coluna de Valor
     df_acion_cobr_pg <- 
         df_acion_cobr_pg %>%
@@ -284,7 +280,7 @@ f_leRawCobra_Avon <- function(in_aaaamm) {
         mutate (Diasem.Acion = wday(Acionamento, label = TRUE),
                 Hora.Acion = hour(Acionamento))
     # criando colunas de quantiles para valor para ser usada como classificador
-    df_acion_incobr_pg$Faixa.Valores = cut(df_acion_incobr_pg$Valor,breaks=quantile(df_acion_incobr_pg$Valor))
+    df_acion_incobr_pg$Faixa.Valores = cut(df_acion_incobr_pg$Valor,breaks=quantile(df_acion_incobr_pg$Valor), include.lowest = TRUE)
     # eliminando a coluna de Valor
     df_acion_incobr_pg <- 
         df_acion_incobr_pg %>%
@@ -315,16 +311,19 @@ f_leRawCobra_Avon <- function(in_aaaamm) {
                 Hora.Acion = hour(Acionamento))
     
     # criando colunas de quantiles para valor para ser usada como classificador
-    df_acion_3fase_pg$Faixa.Valores = cut(df_acion_3fase_pg$Valor,breaks=quantile(df_acion_3fase_pg$Valor))
+    df_acion_3fase_pg$Faixa.Valores = cut(df_acion_3fase_pg$Valor,breaks=quantile(df_acion_3fase_pg$Valor), include.lowest = TRUE)
     # eliminando a coluna de Valor
     df_acion_3fase_pg <- 
         df_acion_3fase_pg %>%
         select (-Valor)
     
-    # probabilidade prior para acordos conseguidos por acionamento de toda a carteira
-    prop.table(table(df_acion_cobr_pg$pago))
-    prop.table(table(df_acion_incobr_pg$pago))
-    prop.table(table(df_acion_3fase_pg$pago))
+    
+    descrCorr <- cor(trainDescr)
+    # plotando com p-value para cada correlação
+    # interessante para ver correlação entre os componentes!!
+    corrplot.mixed(descrCorr, insig = "p-value",sig.level = -1)
+    
+    
     
     # retorna lista com os data.frames para uso no treino e teste do modelo
     # separados para os tipos de carteira:
