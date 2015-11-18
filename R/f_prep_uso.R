@@ -29,7 +29,6 @@ f_prep_uso <- function(df_cli_i, df_acion_i) {
     #  que fazer nesta situação? A principio vou considerar pago, se aparece
     # em ambos
     
-    
     # TESTAR PARA INCOBRAVEIS
     # eliminar duplicidade de contratos em acionamentos
     # tirar duplicidade de contratos 
@@ -37,7 +36,7 @@ f_prep_uso <- function(df_cli_i, df_acion_i) {
         df_acion_i %>%
         distinct(Contrato)
     
-    df_incobr_use <- merge(df_cli_i, df_acion_i,by=c("Contrato"), all.x = TRUE)
+    df_incobr_use <- left_join(df_cli_i, df_acion_i,by=c("Contrato"))
     
     # criando dataframe de clientes sem acionamento cobraveis
     df_incobr_use <-
