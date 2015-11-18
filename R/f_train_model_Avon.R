@@ -15,7 +15,9 @@ f_train_model_Avon <- function(df_in) {
     class <- factor(class, levels = c("S","N"))
     # usando atributos:
     # Cidade, Numero.Contatos, Diasem.Acion, Hora.Acion, Faixa.Valores
-    descr <- df_in[,c(4,10,11,12,13)] # tirando cidade para teste enquanto não tem
+    #descr <- df_in[,c(4,10,11,12,13)] # tirando cidade para teste enquanto não tem
+    # TESTE só com dados do cadastro: Cidade, faixa.Valores
+    descr <- df_in[,c(4,13)] # tirando cidade para teste enquanto não tem
     
     # ----- cria datasets de treino, teste e uso em previsão
     set.seed(1)

@@ -9,9 +9,9 @@ options(java.parameters = "-Xmx2000m")
 
 require("xlsx")
 #require("data.table")
-require("dplyr")
-require("doMC")
-require("lubridate")
+#require("dplyr")
+#require("doMC")
+#require("lubridate")
 
 f_leRawCobra_Avon <- function(in_aaaamm) {
     # constantes
@@ -316,14 +316,6 @@ f_leRawCobra_Avon <- function(in_aaaamm) {
     df_acion_3fase_pg <- 
         df_acion_3fase_pg %>%
         select (-Valor)
-    
-    
-    descrCorr <- cor(trainDescr)
-    # plotando com p-value para cada correlação
-    # interessante para ver correlação entre os componentes!!
-    corrplot.mixed(descrCorr, insig = "p-value",sig.level = -1)
-    
-    
     
     # retorna lista com os data.frames para uso no treino e teste do modelo
     # separados para os tipos de carteira:
