@@ -73,7 +73,10 @@ f_leRawCobra_Avon <- function(in_aaaamm) {
         arrange(Contrato,desc(Acionamento)) %>%
         mutate( pago = "N") # inicializa nova coluna pago como N
     
-    # eliminando contatos sem sucesso
+    # eliminando contatos sem sucesso (para obter percentual de pagamentos realizados
+    # por acionamento com sucesso)
+    # comentar este comando para obter percentual de pagamentos realizados
+    # sobre todos os acionamentos (sucessos ou não no contato) 
     df_acion_cobr_sort <-
         df_acion_cobr_sort %>%
         filter(Ocorrencia %in% c("Acordo", "Acordo - Manutenção", "Acordo - Realizado",
@@ -213,7 +216,7 @@ f_leRawCobra_Avon <- function(in_aaaamm) {
     # procurando nos acionamentos concatenados de todo 2015 o Acionamento mais recente
     # e então marcar como pago = S
     
-    # ordena por contrato e Recebimento, salvando o valor total da dívida
+    # ordena por contrato e Recebimento, salvando o valor total da dívida paga
     # (somando as parcelas)
     df_pg_sort <-
         df_pg %>%
