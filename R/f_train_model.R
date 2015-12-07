@@ -10,10 +10,12 @@ f_train_model <- function(df_in) {
     registerDoMC(5) # parallel processing
  
     #selecionando as features e target em arquivos diferentes
-    class <- as.factor(df_in[,"pago"]) # transformando em vetor de fatores de target
+    class <- as.factor(df_in[,"PAGO"]) # transformando em vetor de fatores de target
+    class <- factor(class, levels = c("S","N")) # ordenando levels para "S" se ro primeiro
     # usando Operador, Cidade, diasem.acion, hora.acion, valGroups
     #descr <- df_in[,c(3,5,10,11,12)] # transformando em dataframe de features
-    descr <- df_in[,c(3,10,11,12)] # tirando cidade para teste enquanto não tem
+    descr <- df_in[,c(8,9,10,11)] # Obs: depois trocar Valor Devido por Faixa para ver se melhora o modelo!!
+    # por enquanto considerar somente VALOR.DEVIDO (VALOR PAGO E PARCELAS TEM NA. NÃO PODEM SER FEATURES???)
     # ----- cria datasets de treino, teste e uso em previsão
     set.seed(1)
     inTrain <- createDataPartition(class, p = 3/4, list = FALSE)
