@@ -42,11 +42,16 @@ f_leRawCobra <- function() {
     df_carteira <- 
         df_carteira %>%
         distinct(CONTRATO)
-    
+
     # somando valores para obter valor total da dívida 
     # antes, dois passos para transformar coluna JUROS de fator -> character -> numeric
     df_carteira <- df_carteira %>% mutate (JUROS = as.character(JUROS)) # para acerto do merge com cliav
     df_carteira <- df_carteira %>% mutate (JUROS = as.numeric(JUROS)) # para acerto do merge com cliav
+    
+    ind <-is.na(df_carteira$JUROS)
+    df_carteira[ind,]
+    # eliminando valores de JUROS igual a NA (nao tem valores de divida tb)
+    df_carteira <- na.omit(df_carteira)
     
     df_carteira <-
         df_carteira %>%
@@ -90,14 +95,21 @@ f_leRawCobra <- function() {
     #-----------------------------------------------------------
     
     # ler planilha com dados de acionamentos
-    #df_acion <- read.xlsx2("./data/Acionamentos out e nov 2015-raw.xlsx", sheetIndex = 1, header = TRUE)
+    #df_acion <- read.xlsx2("./data/Acionamentos2.xlsx", sheetIndex = 1, header = TRUE)
     # FALTA MEMORIA: df_acion <- read.xlsx2("./data/Dados Raw-04-12-2015.xlsx", sheetIndex = "ACIONAMENTO", header = TRUE)
     # ATENÇÃO: salvar do excel em formato texto (txt) com UTF-16
-    df_acion <- read.csv2("./data/Dados Raw-04-12-2015-ACIONAMENTO.csv", header = FALSE, sep = ",")
+    df_acion <- read.csv2("./data/Acionamentos2.csv", header = TRUE, sep = ",")
    
-    # inserindo headers
-    colnames (df_acion) <- c("CONTRATO", "OCORRENCIA", "DATA.ACION", "SUCESSO", "COD.ACION", "TIPO.ACION")
-    
+    # mudando nomes dos headers
+    #colnames (df_acion) <- c("CONTRATO", "OCORRENCIA", "DATA.ACION", "SUCESSO", "COD.ACION", "TIPO.ACION")
+    df_acion <-
+        df_acion %>%
+        rename(CONTRATO = REG_ASK,
+               OCORRENCIA = DESCR_OCO,
+               DATA.ACION = DTAND_AND,
+               SUCESSO = SUCES_OCO,
+               COD.ACION = ORIGE_AND,
+               TIPO.ACION = Tipo_Acionamento)
     # tirando os caracteres não printáveis
     #lapply(df_acion$V2, sub,"<8d>","ç",df_acion$V2)
     #df_acion$V2 <- sub("\x8d","ç", df_acion$V2)
