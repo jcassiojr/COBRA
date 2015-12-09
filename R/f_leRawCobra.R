@@ -12,17 +12,17 @@
 
 # features a usar de clientes Avon e Pgto: CPF, Valor/Valor.Acordo (de pgtos), Contrato
 
-require("xlsx")
+#require("xlsx")
 #require("data.table")
 #require("dplyr")
 #require("doMC")
-require("lubridate")
+#require("lubridate")
 
 f_leRawCobra <- function() {
     # constantes
     vl_dívida_minimo = 1.0
     
-    registerDoMC(5) # parallel processing
+    #registerDoMC(5) # parallel processing
     
     # ler planilha com dados de acordos
     #df_acor <- read.xlsx2("./data/Acordos-cass.xls", sheetIndex = 1, header = TRUE)
@@ -312,8 +312,11 @@ f_leRawCobra <- function() {
     # total de acionamentos incobráveis
     # total de acionamentos Avon 3a.Fase
     
+    # libera library usada na funcao para evitar conflitos em outras funcoes
+    #detach("package:dplyr", unload=TRUE)
+    #detach("package:xlsx", unload=TRUE)
+    #detach("package:lubridate", unload=TRUE)
     # retorna lista com os 3 arquivos raw lidos
-    
     l <- list(df_acion,df_carteira,df_pg)
     
     return (l) 

@@ -1,8 +1,9 @@
 # agbd_COBRA
+require("xlsx")
+require("lubridate")
 require("caret")
 require("ROCR")
 require("doMC")
-require("lubridate")
 require("MASS")
 require("dplyr")
 
@@ -29,6 +30,8 @@ source("~/Documents/MyGit/COBRA/R/f_geraTidyCobra.R")
 source("~/Documents/MyGit/COBRA/R/f_train_model.R")
 source("~/Documents/MyGit/COBRA/R/f_opt_cut.R")
 source("~/Documents/MyGit/COBRA/R/f_prep_uso.R")
+source("~/Documents/MyGit/COBRA/R/f_previsao.R")
+
 registerDoMC(5) # parallel processing
 
 # lê dados para treino e teste
@@ -38,14 +41,19 @@ df_acion <- l_raw[[1]]
 df_carteira <- l_raw[[2]]
 df_pg <- l_raw[[3]]
 
+# prepara dados tidy para analise
 df_tidy <- f_geraTidyCobra(df_acion, df_carteira, df_pg)
 
 # prior probs das tabelas lidas
 # obs: se a diferença entre cobr e incobr é pequena, concatenar
+# fazer esta análise em time series para o ano (% x mês)
 prop.table(table(df_tidy$PAGO))   # sucesso de 8.4 %
 
 #prop.table(table(df_incobr$pago)) # sucesso de 4.8 %
 #rop.table(table(df_3fase$pago))  # sem números suficientes
+# prepara dados para uso na previsao
+l_uso <- f_prep_uso(df_carteira, df_pg)
+# treina o modelo com dados de teste e treino
 l_model <- f_train_model(df_tidy)
 
 models <-  l_model[[1]] # modelo trans de caret
@@ -89,9 +97,33 @@ sprintf("Cobravel - Valor de Cutoff-ROC Best Balance : %.4f",valor_cutoff)
 # Previsão
 # separa dados para previsão (usar os dados de cliente que não aparecem nos acionamentos)
 
-# PAREI AQUI: CHAMAR FUNCAO f_previsao, usando dados de Avon que não aparecem no acionamento e plicar modelo!!!!!
+# f_previsao, usando dados de Avon que não aparecem no acionamento e aplicar modelo!!!!!
+df_rank.prev <- f_previsao(l_model, l_uso)
 
+# filtrando por valor de cutoff
+df_rank.cutoff <-
+    df_rank.prev %>%
+    filter(probClass >= valor_cutoff)
+# filtrando para valor de % dado
+df_rank.50 <-
+    df_rank.prev %>%
+    filter(probClass >= 0.5)
+df_rank.40 <-
+    df_rank.prev %>%
+    filter(probClass >= 0.4)
+df_rank.30 <-
+    df_rank.prev %>%
+    filter(probClass >= 0.3)
+df_rank.20 <-
+    df_rank.prev %>%
+    filter(probClass >= 0.2)
 
+# salvando em planilhas
+write.xlsx(df_rank.50, "./data/Ranking-50.xlsx")
+write.xlsx(df_rank.40, "./data/Ranking-40.xlsx")
+write.xlsx(df_rank.30, "./data/Ranking-30.xlsx")
+write.xlsx(df_rank.20, "./data/Ranking-20.xlsx")
+write.xlsx(df_rank.cutoff, "./data/Ranking-cutoff.xlsx")
 
 # +++++++++++++ TERMINA AQUI O NOVO
 

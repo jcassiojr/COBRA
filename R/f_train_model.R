@@ -5,21 +5,21 @@
 #require("ROCR")
 #library("lubridate")
 #require("doMC")
-f_train_model <- function(df_in) {
+f_train_model <- function(df_tidy_in) {
     
     registerDoMC(5) # parallel processing
  
     #selecionando as features e target em arquivos diferentes
-    class <- as.factor(df_in[,"PAGO"]) # transformando em vetor de fatores de target
+    class <- as.factor(df_tidy_in[,"PAGO"]) # transformando em vetor de fatores de target
     class <- factor(class, levels = c("S","N")) # ordenando levels para "S" se ro primeiro
     # usando Operador, Cidade, diasem.acion, hora.acion, valGroups
     # OBS: nenhuma cobinação abaixo pareceu melhorar o modelo
     # ABAIXO USANDO VALOR DEVIDO AGRUPADO
-    #descr <- df_in[,c(8,9,11,12,19)] # transformando em dataframe de features
+    #descr <- df_tidy_in[,c(8,9,11,12,19)] # transformando em dataframe de features
     # ABAIXO USANDO VALOR, SETOR e DIAS ATRASO AGRUPADOS
-    #descr <- df_in[,c(11,12,19,20,21)] # transformando em dataframe de features
+    #descr <- df_tidy_in[,c(11,12,19,20,21)] # transformando em dataframe de features
     # ABAIXO USANDO VALOR DEVIDO SEM AGRUPAR E USANDO SOMENTE FEATURES DO ARQUIVO AVON PARA PODER PREVER DEPOIS
-    descr <- df_in[,c(8,9,10)] # Obs: depois trocar Valor Devido por Faixa para ver se melhora o modelo!!
+    descr <- df_tidy_in[,c(8,9,10)] # Obs: depois trocar Valor Devido por Faixa para ver se melhora o modelo!!
     # transformando N. Parcelas NA em média dos valores e depois em zero para ver se melhora o modelo 
     # MELHOROU O MODELO! FICOU MELHOR QUE CONSIDERANDO A MEDIA ABAIXO
     #descr <-
@@ -45,12 +45,6 @@ f_train_model <- function(df_in) {
     
     trainDescr <- descr[inTrain,]
     testDescr  <- descr[-inTrain,]
-    # aqui gerar dados de uso
-    # contratos Avon que não constam de pagamento
-    useDescr <- anti_join(df_carteira, df_pg,by=c("CONTRATO"))
-    useDescr <- useDescr[,3:5]
-    useID <- useDescr[,1:2]
-    #useDescr  <- df_scores_hg_use[,-2] # transformando em dataframe de uso sem coluna target
     
     trainClass <- class[inTrain]
     testClass  <- class[-inTrain]
@@ -111,8 +105,8 @@ f_train_model <- function(df_in) {
     # Plot roc. objects (para cada modelo)
     #-----------------
     # RETORNAR objeto performance
-    plot(roc.perf_o)
-    abline(a=0, b= 1)
+    #plot(roc.perf_o)
+    #abline(a=0, b= 1)
     # # RETORNAR AUC
     roc.auc_o = performance(pred_o, measure = "auc")
     auc <- roc.auc_o@y.values
@@ -170,6 +164,11 @@ f_train_model <- function(df_in) {
     #selecionando as features e target em arquivos diferentes
     #class <- as.factor(df_acion[,"acordo"]) # transformando em vetor de fatores de target
     #descr <- df_acion[,-c(1,5,6,7,8,9,10,11)] # transformando em dataframe de features
+    
+    # libera library usada na funcao para evitar conflitos em outras funcoes
+    #detach("package:caret", unload=TRUE)
+    #detach("package:ROCR", unload=TRUE)
+    
     l_o <- list(models_o,aic_o,cf_o, roc.perf_o, roc.auc_o, pred_o, df_rank_o)
     return(l_o)
     
