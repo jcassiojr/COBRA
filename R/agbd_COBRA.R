@@ -50,7 +50,6 @@ cf <-  l_model[[3]] # objeto confusion matrix
 roc.perf <-  l_model[[4]] # objeto performance de caret
 roc.auc <-  l_model[[5]] # valor de AUC de curva ROC
 pred <-  l_model[[6]] # valor de cutoff calculado (best balance)
-df_rank <-  l_model[[7]] # dataframe com pobabilidades de teste rankeadas
 
 resampleHist(models$nb)
 
@@ -108,4 +107,6 @@ write.xlsx(df_rank.50, "./data/Ranking-50.xlsx")
 #write.xlsx(df_rank.30, "./data/Ranking-30.xlsx")
 #write.xlsx(df_rank.20, "./data/Ranking-20.xlsx")
 write.xlsx(df_rank.cutoff, "./data/Ranking-cutoff.xlsx")
+
+# obs: para ver resultado, obter performnce do memso mês de 2014 (dez(2014), jan(2015))
 
