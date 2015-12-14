@@ -6,7 +6,7 @@
 
 f_leRawCobra <- function() {
     # constantes
-    vl_dívida_minimo = 1.0
+    vl_divida_minimo = 1.0
     
     # obter dados do cliente Avon
     ###############################################################
@@ -35,7 +35,7 @@ f_leRawCobra <- function() {
     # elimina clientes com valor abaixo do mínimo definido (R$ 1,00)
     df_carteira <-
         df_carteira %>%
-        filter (VALOR.DEVIDO >= vl_dívida_minimo)
+        filter (VALOR.DEVIDO >= vl_divida_minimo)
     
     # eliminando colunas desnecessárias
     df_carteira <-
