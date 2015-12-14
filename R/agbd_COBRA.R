@@ -7,24 +7,6 @@ require("doMC")
 require("MASS")
 require("dplyr")
 
-#############################################
-## DATA PREPARATION
-## agrupar coluna hora.acion truncando por hora
-## carregar como dados de uso para previsão dados novos ainda não rodados
-## para dados de uso para previsão precisamos ter atributos: 
-## Valor (da carteira), 
-## Cobrável: Se é cobravel, incobravel , 3a onda,(da carteira)
-## Cidade do cliente (da carteira)
-## Operador (previsto para acionamento)
-## Dia da semana (previsto para acionamento)
-## Hora (prevista para acionamento)
-## e se quiser prever melhor dia da semana?
-## R: montar tabela com dados previstos de acionamento. Obter as probabilidades,
-##    ordenar por Operador/dia da semana e pegar os de maior probabilidade.
-##    ver quantos conseguem por dia para corte
-## outra abordagem: considerar modelo somente com dados carteira. Depois com um 
-## atributo de acionamento por vez
-#############################################
 source("~/Documents/MyGit/COBRA/R/f_leRawCobra.R")
 source("~/Documents/MyGit/COBRA/R/f_geraTidyCobra.R")
 source("~/Documents/MyGit/COBRA/R/f_train_model.R")
@@ -36,7 +18,7 @@ registerDoMC(5) # parallel processing
 
 # lê dados para treino e teste
 l_raw <- f_leRawCobra()
-# obtém dataframe
+ # obtém dataframe
 df_acion <- l_raw[[1]]
 df_carteira <- l_raw[[2]]
 df_pg <- l_raw[[3]]
@@ -47,11 +29,12 @@ df_tidy <- f_geraTidyCobra(df_acion, df_carteira, df_pg)
 # prior probs das tabelas lidas
 # obs: se a diferença entre cobr e incobr é pequena, concatenar
 # fazer esta análise em time series para o ano (% x mês)
-prop.table(table(df_tidy$PAGO))   # sucesso de 8.4 %
+prop.table(table(df_tidy$PAGO))   # sucesso de 59 % de obter primeiro pgto quando acionado
 
 #prop.table(table(df_incobr$pago)) # sucesso de 4.8 %
 #rop.table(table(df_3fase$pago))  # sem números suficientes
 # prepara dados para uso na previsao
+# retorna lista com 1 dataframe de ID e outro de Features de carteira sem pagamento detectado
 l_uso <- f_prep_uso(df_carteira, df_pg)
 # treina o modelo com dados de teste e treino
 l_model <- f_train_model(df_tidy)
@@ -89,8 +72,8 @@ df_cutoff <-
 # prints
 print(aic$formula)
 sprintf("AIC Cobravel: %.2f",aic$aic)
-sprintf("Cobravel - %s : %.4f",roc.auc@y.name,roc.auc@y.values)
-sprintf("Cobravel - Valor de Cutoff-ROC Best Balance : %.4f",valor_cutoff)
+sprintf("Avon - %s : %.4f",roc.auc@y.name,roc.auc@y.values)
+sprintf("Avon - Valor de Cutoff-ROC Best Balance : %.4f",valor_cutoff)
 
 
 #--------------------------------------------------
@@ -98,6 +81,7 @@ sprintf("Cobravel - Valor de Cutoff-ROC Best Balance : %.4f",valor_cutoff)
 # separa dados para previsão (usar os dados de cliente que não aparecem nos acionamentos)
 
 # f_previsao, usando dados de Avon que não aparecem no acionamento e aplicar modelo!!!!!
+# retorna o data.frame com a carteira prevista 
 df_rank.prev <- f_previsao(l_model, l_uso)
 
 # filtrando por valor de cutoff
@@ -120,9 +104,9 @@ df_rank.20 <-
 
 # salvando em planilhas
 write.xlsx(df_rank.50, "./data/Ranking-50.xlsx")
-write.xlsx(df_rank.40, "./data/Ranking-40.xlsx")
-write.xlsx(df_rank.30, "./data/Ranking-30.xlsx")
-write.xlsx(df_rank.20, "./data/Ranking-20.xlsx")
+#write.xlsx(df_rank.40, "./data/Ranking-40.xlsx")
+#write.xlsx(df_rank.30, "./data/Ranking-30.xlsx")
+#write.xlsx(df_rank.20, "./data/Ranking-20.xlsx")
 write.xlsx(df_rank.cutoff, "./data/Ranking-cutoff.xlsx")
 
 # +++++++++++++ TERMINA AQUI O NOVO

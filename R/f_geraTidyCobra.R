@@ -40,38 +40,69 @@ f_geraTidyCobra <- function(df_acion_in, df_carteira_in, df_pg_in) {
     # obs: ver se dá muita diferença nos totais para este ultimo caso
     df_tidy_pg <- left_join(df_acion_avon, df_pg_in,by=c("CONTRATO"))
     
-    # PAREI AQUI
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     # obs: pode acontecer de data acion ser depois de dt pgto pois entrou em contato após
     # pgto. Portanto, devo pegar a primeira data de acionamento em df_acion, tirar contratos
     # duplicados para manter apenas a primeira data e depois marcar os pagamentos como "S"
     # 1. pegar somente a primeira dt acion de cada contrato e tirar contratos em duplicidade
-    df_tidy_pg <-
-        df_tidy_pg %>%
-        arrange(CONTRATO, DATA.ACION) %>%
-        distinct(CONTRATO)
-    # 3. marcar somente os dt acion antes de dt pgto < 10 dias para os casos que existe pagamento
-    df_tidy_pg <-
-        df_tidy_pg %>%
-        mutate(PAGO = ifelse(!is.na(PAGAM_PAG) & 
-                                 (difftime(DTpgto ,DATA.ACION , units = c("days")) < 10) &
-                                 (difftime(DTpgto ,DATA.ACION , units = c("days")) >= 0), "S", PAGO))
     
-    # TESTE: Criar DESCONTO, para testar como FEATURE
+    # TESTE para criar coluna com min e max data de acionamento
+    # MARCAR COMO PAGO os acionamentos de contratos dentro de intervalo de menos de 10 dias do pgto!!! 
+    # FORMA DE ASSOCIAR ACIONAMENTO A PGTO!!! TESTAR
+    # 1. filtrar somente DATA.ACION menor ou igual a 10 dias de DtPag somente para os que tem pgto
+    df_tidy_pg <-
+        df_tidy_pg %>%
+        filter((difftime(DTpgto ,DATA.ACION , units = c("days")) < 10) &
+                   (difftime(DTpgto ,DATA.ACION , units = c("days")) >= 0) |
+                   is.na(PAGAM_PAG))
+    
+    # 2. marcar como PAGO (OK!)
+    # 3. tirar contratos duplicados
+    df_tidy_pg <-
+        df_tidy_pg %>%
+        mutate(PAGO = ifelse(!is.na(PAGAM_PAG), "S", PAGO)) %>%
+        distinct(CONTRATO)
+        
+    
+    
+    
+    
+    
+    
+    
+    #df_tidy_pg <-
+    #    df_tidy_pg %>%
+    #    group_by(CONTRATO) %>%
+    #    mutate(ULT.ACION = max(DATA.ACION),
+    #              PRIM.ACION = min(DATA.ACION)) %>%
+    #    distinct(CONTRATO) %>%
+    #    select(-OCORRENCIA, -DATA.ACION)
+    
+    # filtrar somente acionamentos com prim.acion < dt.pgto 
+    # ATENÇÃO: último acionamento pode ser depois que já pagou algumas parcelas
+    # Portanto, não deve ser usado para filtrar os dados se o objetivo é
+    # detectar o primeiro pagamento. Para isso, usar somente pgto após primeiro acionamento
+    # e não muito distante no tempo (dt pgto < 10 dias? ou 30 dias? do prim acionamento)
+    #df_tidy_pg <-
+    #    df_tidy_pg %>%
+    #    mutate(PAGO = ifelse(!is.na(PAGAM_PAG) & 
+    #                             (difftime(DTpgto ,PRIM.ACION , units = c("days")) >= 0), "S", PAGO))
+    # filtrar somente acionamentos com ult.acion < 10 dias
+    #++++++++++++++++++
+    #df_tidy_pg <-
+    #    df_tidy_pg %>%
+    #    arrange(CONTRATO, DATA.ACION) %>%
+    #    distinct(CONTRATO)
+    # 3. marcar somente os dt acion antes de dt pgto < 10 dias para os casos que existe pagamento
+    #df_tidy_pg <-
+    #    df_tidy_pg %>%
+    #    mutate(PAGO = ifelse(!is.na(PAGAM_PAG) & 
+    #                             (difftime(DTpgto ,DATA.ACION , units = c("days")) < 10) &
+    #                             (difftime(DTpgto ,DATA.ACION , units = c("days")) >= 0), "S", PAGO))
+    
+    #PAREI AQUI: criar colunas: PRIM ACIONAMENTO, ULT ACIONAMENTO
+    # filtrar data pgto maior que data do primeiro acionamento e depois data de pgto menor que 10 dias da 
+    # ultima data de acionamento
+    # TESTE: Criar DESCONTO, para testar como analise para correlacionar com pgto
     df_tidy_pg <-
         df_tidy_pg %>%
         mutate(DESCONTO = VALOR.DEVIDO - VALOR.PAGO,

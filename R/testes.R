@@ -67,7 +67,7 @@ zoo_acion_tidy <- zoo(df_acion.dia$N.ACION, df_acion.dia$DIA.ACION)
 plot(zoo_acion_tidy)
 
 # usando zoo package
-## simple creation and plotting
+## simple creation and plotting of time series
 library(zoo)
 x.Date <- as.Date("2003-02-01") + c(1, 3, 7, 9, 14) - 1
 x <- zoo(rnorm(5), x.Date)
@@ -76,4 +76,7 @@ time(x)
 
 # FALTA AGORA COLOCAR LABELS E MELHORAR A APARENCIA DO PLOT
 
+
+
+df_acion <- read.csv("./data/Acionamentos Avon-14-12-2015.rpt", skip = 2, sep = "|", header = TRUE)
 

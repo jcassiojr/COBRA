@@ -98,8 +98,9 @@ f_leRawCobra <- function() {
     #df_acion <- read.xlsx2("./data/Acionamentos2.xlsx", sheetIndex = 1, header = TRUE)
     # FALTA MEMORIA: df_acion <- read.xlsx2("./data/Dados Raw-04-12-2015.xlsx", sheetIndex = "ACIONAMENTO", header = TRUE)
     # ATENÇÃO: salvar do excel em formato texto (txt) com UTF-16
-    df_acion <- read.csv2("./data/Acionamentos2.csv", header = TRUE, sep = ",")
-   
+    #df_acion <- read.csv2("./data/Acionamentos2.csv", header = TRUE, sep = ",")
+    df_acion <- read.csv("./data/Acionamentos Avon-14-12-2015.rpt", skip = 2, sep = "|", header = TRUE)
+    
     # mudando nomes dos headers
     #colnames (df_acion) <- c("CONTRATO", "OCORRENCIA", "DATA.ACION", "SUCESSO", "COD.ACION", "TIPO.ACION")
     df_acion <-
