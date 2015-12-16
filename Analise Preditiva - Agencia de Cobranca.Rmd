@@ -1,0 +1,168 @@
+---
+title: "Análise Preditiva - Agência de Cobrança - DRAFT"
+author: "José Cassio"
+date: "Dezembro 16, 2015"
+output:
+  html_document
+---
+
+![agileBIGDATA](./aBIG5.png)
+
+Este documento descreve a análise preditiva realizada com o objetivo de melhorar a performance de cobrança da **Agência de Cobrança Asserth**, baseado em dados de cobrança da Avon.
+
+### Preparação dos dados ###
+Foram obtidos os dados brutos das seguintes fontes:
+
+* Dados Raw-04-12-2015-CARTEIRA.csv (Dados da carteira Avon)
+* Acionamentos Avon-14-12-2015.rpt (Dados de acionamentos de clientes Avon de 07/10/2014 até 11/12/2015)
+* Dados Raw-04-12-2015-Pgtos Avon.xlsx (Dados de Pagamentos de clientes Avon de 15/10/2014 a 01/12/2015)
+
+Os arquivos acima foram preparados, gerando:
+
+```{r,echo=FALSE}
+require("xlsx", quietly = TRUE, warn.conflicts = FALSE)
+require("lubridate", quietly = TRUE, warn.conflicts = FALSE)
+require("caret", quietly = TRUE, warn.conflicts = FALSE)
+require("ROCR", quietly = TRUE, warn.conflicts = FALSE)
+require("doMC", quietly = TRUE, warn.conflicts = FALSE)
+require("MASS", quietly = TRUE, warn.conflicts = FALSE)
+require("dplyr", quietly = TRUE, warn.conflicts = FALSE)
+require("corrplot", quietly = TRUE, warn.conflicts = FALSE)
+
+source("~/Documents/MyGit/COBRA/R/f_leRawCobra.R")
+source("~/Documents/MyGit/COBRA/R/f_geraTidyCobra.R")
+source("~/Documents/MyGit/COBRA/R/f_train_model.R")
+source("~/Documents/MyGit/COBRA/R/f_opt_cut.R")
+source("~/Documents/MyGit/COBRA/R/f_prep_uso.R")
+source("~/Documents/MyGit/COBRA/R/f_previsao.R")
+
+registerDoMC(5) # parallel processing
+
+l_raw <- suppressWarnings(f_leRawCobra())
+ # obtém dataframe
+df_acion <- l_raw[[1]]
+df_carteira <- l_raw[[2]]
+df_pg <- l_raw[[3]]
+
+df_tidy <- suppressWarnings(f_geraTidyCobra(df_acion, df_carteira, df_pg))
+```
+
+1.361.262 acionamentos (abaixo exemplo das primeiras 6 ocorrências)
+
+```{r,echo=FALSE}
+knitr::kable(head(df_acion))
+```
+
+109.546 carteiras Avon (abaixo exemplo das primeiras 6 ocorrências)
+
+```{r,echo=FALSE}
+knitr::kable(head(df_carteira))
+```
+
+18.440 pagamentos (abaixo exemplo das primeiras 6 ocorrências)
+
+```{r,echo=FALSE}
+knitr::kable(head(df_pg))
+```
+
+Estes dados brutos, foram combinados usando o número do contrato como chave, de forma a considerar somente acionamentos de clientes Avon que geraram ao menos um pagamento em até 10 dias após um acionamento, gerando o arquivo abaixo para servir de base para as previsões. Cada linha corresponde a um contrato com acionamento, pago ou não:
+
+```{r,echo=FALSE}
+knitr::kable(head(df_tidy[,c(1,3,7,8:13)]))
+```
+
+### Análise Preliminar ###
+
+####Conceito####
+É considerado pagamento com sucesso, sempre que ocorre ao menos o pagamento de uma parcela em até 10 dias de algum acionamento
+
+A partir dos dados acima, a proporção de contratos que pagaram sobre os que não pagaram (ao menos uma parcela) é mostrada abaixo:
+```{r,echo=FALSE}
+t_prop <- prop.table(table(df_tidy$PAGO))
+sprintf("NÃO GERARAM PAGAMENTO: %s %%",round(t_prop[1],4)*100)
+sprintf("GERARAM PAGAMENTO: %s %%",round(t_prop[2],4)*100)
+```
+
+### Criação do modelo ###
+Os dados acima foram usados para treinar um modelo estatístico que considera como os seguintes atributos da carteira afetam o resultado (pagamento):
+    * setor do cliente
+    * valor devido do cliente
+    * dias de atraso da dívida
+
+### Validação do modelo escolhido ###
+Foi escolhido um modelo que implementa uma análise conhecida como Naive Bayes, que costuma apresentar bons resultados preditivos para um grande número de aplicações.
+O modelo foi validado, apresentando os  resultados de performance explicados abaixo.
+
+#### Gráficos de Performance ####
+A performance do modelo é medida a partir de 3 parâmetros:
+* Sensitividade - capacidade do modelo prever pagamento e ele realmente ser efetuado
+* Especificidade - capacidade do modelo detectar quem estava previso para pagar mas não paga
+* Acurácia balanceada - o resultado médio das performances acima
+* Área abaixo da curva ROC (explicada abaixo)
+
+```{r,echo=FALSE}
+l_model <- suppressWarnings(f_train_model(df_tidy))
+models <-  l_model[[1]] # modelo trans de caret
+aic <-  l_model[[2]] # Valor de AIC do modelo
+cf <-  l_model[[3]] # objeto confusion matrix
+roc.perf <-  l_model[[4]] # objeto performance de caret
+roc.auc <-  l_model[[5]] # valor de AUC de curva ROC
+pred <-  l_model[[6]] # valor de cutoff calculado (best balance)
+
+# obtém o valor de cutoff de best balance na curva ROC
+valor_cutoff <- suppressWarnings(f_opt_cut(roc.perf, pred)[3])
+
+#A matriz abaixo mostra a performance
+resampleHist(models$nb)
+
+# objeto confusion Matrix (devo diminuir false positive)
+print(cf$table)
+```
+
+*Sensitividade* = pagamentos previstos corretamente / total de pagamentos previstos como sucesso
+```{r,echo=FALSE}
+print(cf$byClass[1]) #Sensitivity
+```
+
+*Especificidade* = pagamentos previstos erroneamente / total de pagamentos previstos como sem sucesso
+```{r,echo=FALSE}
+print(cf$byClass[2]) #Sensitivity
+print(cf$byClass[8]) #Balanced Acuracy
+#print(cf$overall)
+```
+
+#### Curva ROC ####
+A curva ROC permite avaliar a performanca de um modelo. O conceito é que a linha reta na diagonal representa uma escolha aleatória de acionamentos. A linha curva representa a performance do modelo. Quanto maior a área embaixo desta curva, melhor a performance do modelo para previr os clientes que pagarão.
+Também é possivel obter a partir desta curva qual a melhor probabilidade de corte balanceada. Ou seja, tomando os clientes acima desta probabilidade temos o melhor resultado esperado em obter pagamentos.
+
+```{r,echo=FALSE}
+# Plot roc. objects (para cada modelo)
+plot(roc.perf)
+abline(a=0, b= 1)
+# lift plot
+#roc.perf.lift = performance(pred, measure = "lift", x.measure = "rpp")
+#plot(roc.perf.lift)
+
+#print(aic$formula)
+#sprintf("AIC Cobravel: %.2f",aic$aic)
+#sprintf("Avon - %s : %.4f",roc.auc@y.name,roc.auc@y.values)
+#sprintf("Avon - Valor de Cutoff-ROC Best Balance : %.4f",valor_cutoff)
+
+t_prop <- prop.table(table(df_tidy$PAGO))
+sprintf("Área sobre a curva ROC: %s %%",round(as.numeric(roc.auc@y.values) * 100,2))
+```
+
+### Previsão de Pagamentos ###
+Aplicando o modelo aos clientes da carteira Avon que ainda não possuem pagamentos detectados, obtemos uma lista rankeda decrescente de acordo com a maior probabilidade de sucesso de obter pagamento.
+A lista gerada para esta execução do modelo originou um ranking com 19.648 acionamentos com a melhor probabilidade de obtenção de ao menos um pagamento.
+Abaixo estão listadas as primeiras linhas do ranking gerado como exemplo.
+
+```{r,echo=FALSE}
+l_uso <- suppressWarnings(f_prep_uso(df_carteira, df_pg))
+df_rank.prev <- suppressWarnings(f_previsao(l_model, l_uso))
+# filtrando por valor de cutoff
+df_rank.cutoff <-
+    df_rank.prev %>%
+    filter(probClass >= valor_cutoff)
+knitr::kable(head(df_rank.cutoff[,1:2]))
+```
