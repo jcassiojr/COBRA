@@ -35,6 +35,8 @@ source("~/Documents/MyGit/COBRA/R/f_train_model.R")
 source("~/Documents/MyGit/COBRA/R/f_opt_cut.R")
 source("~/Documents/MyGit/COBRA/R/f_prep_uso.R")
 source("~/Documents/MyGit/COBRA/R/f_previsao.R")
+# general options
+options(digits=2)  # the default is 7, but it's more than I want now
 
 registerDoMC(5) # parallel processing
 
@@ -158,6 +160,7 @@ A lista gerada para esta execução do modelo originou um ranking com 19.648 aci
 Abaixo estão algumas linhas do ranking gerado como exemplo.
 
 ```{r,echo=FALSE}
+
 l_uso <- suppressWarnings(f_prep_uso(df_carteira, df_pg))
 df_rank.prev <- suppressWarnings(f_previsao(l_model, l_uso))
 # filtrando por valor de cutoff
