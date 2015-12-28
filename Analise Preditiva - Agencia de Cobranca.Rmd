@@ -155,7 +155,7 @@ sprintf("Área sobre a curva ROC: %s %%",round(as.numeric(roc.auc@y.values) * 10
 ### Previsão de Pagamentos ###
 Aplicando o modelo aos clientes da carteira Avon que ainda não possuem pagamentos detectados, obtemos uma lista rankeda decrescente de acordo com a maior probabilidade de sucesso de obter pagamento.
 A lista gerada para esta execução do modelo originou um ranking com 19.648 acionamentos com a melhor probabilidade de obtenção de ao menos um pagamento.
-Abaixo estão listadas as primeiras linhas do ranking gerado como exemplo.
+Abaixo estão algumas linhas do ranking gerado como exemplo.
 
 ```{r,echo=FALSE}
 l_uso <- suppressWarnings(f_prep_uso(df_carteira, df_pg))
@@ -164,5 +164,10 @@ df_rank.prev <- suppressWarnings(f_previsao(l_model, l_uso))
 df_rank.cutoff <-
     df_rank.prev %>%
     filter(probClass >= valor_cutoff)
-knitr::kable(head(df_rank.cutoff[,1:2]))
+my.newdata <- 
+        df_rank.cutoff %>%
+        sample_n(10) %>%
+        arrange(desc(probClass))
+rownames(my.newdata) <- NULL
+knitr::kable(my.newdata[,1:3])
 ```
