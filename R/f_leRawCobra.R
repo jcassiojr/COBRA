@@ -4,9 +4,9 @@
 # 2. obter o arquivo de pgtos efetuados de 15/10/2014 a 01/12/2015
 # 3. obter dados da carteira avon
 
-f_leRawCobra <- function() {
+f_leRawCobra <- function(vl_divida_minimo) {
     # constantes
-    vl_divida_minimo = 1.0
+   # vl_divida_minimo = 1.0
     
     # obter dados do cliente Avon
     ###############################################################
@@ -33,6 +33,8 @@ f_leRawCobra <- function() {
         mutate(VALOR.DEVIDO = VLSAL_CON + JUROS + VLORI_TRA)
     
     # elimina clientes com valor abaixo do mínimo definido (R$ 1,00)
+    # TESTE: gerar o modelo com valor devido maior de R$ 200 daqui e ver se performance do modelo melhora
+    # Caso piore, roda ro modleo para todos e só no ranking filtrar por R$200
     df_carteira <-
         df_carteira %>%
         filter (VALOR.DEVIDO >= vl_divida_minimo)

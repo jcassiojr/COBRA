@@ -23,11 +23,13 @@ Os arquivos acima foram preparados, gerando:
 require("xlsx", quietly = TRUE, warn.conflicts = FALSE)
 require("lubridate", quietly = TRUE, warn.conflicts = FALSE)
 require("caret", quietly = TRUE, warn.conflicts = FALSE)
-require("ROCR", quietly = TRUE, warn.conflicts = FALSE)
+require("gplots", quietly = TRUE, warn.conflicts = FALSE)
+require("ROCR", quietly = TRUE, warn.conflicts = FALSE) # aqui gera comentários no Rmd
 require("doMC", quietly = TRUE, warn.conflicts = FALSE)
 require("MASS", quietly = TRUE, warn.conflicts = FALSE)
 require("dplyr", quietly = TRUE, warn.conflicts = FALSE)
 require("corrplot", quietly = TRUE, warn.conflicts = FALSE)
+require("klaR", quietly = TRUE, warn.conflicts = FALSE)
 
 source("~/Documents/MyGit/COBRA/R/f_leRawCobra.R")
 source("~/Documents/MyGit/COBRA/R/f_geraTidyCobra.R")
@@ -39,9 +41,10 @@ source("~/Documents/MyGit/COBRA/R/f_previsao.R")
 options(digits=2)  # the default is 7, but it's more than I want now
 
 registerDoMC(5) # parallel processing
-
-l_raw <- suppressWarnings(f_leRawCobra())
- # obtém dataframe
+divida_minima <- 1.0
+# aumentando para 200.00 piorou a performance pois pega menos dados
+l_raw <- suppressWarnings(f_leRawCobra(divida_minima))
+# obtém dataframe
 df_acion <- l_raw[[1]]
 df_carteira <- l_raw[[2]]
 df_pg <- l_raw[[3]]
@@ -78,7 +81,7 @@ knitr::kable(head(df_tidy[,c(1,3,7,8:13)]))
 ####Conceito####
 É considerado pagamento com sucesso, sempre que ocorre ao menos o pagamento de uma parcela em até 10 dias de algum acionamento
 
-A partir dos dados acima, a proporção de contratos que pagaram sobre os que não pagaram (ao menos uma parcela) é mostrada abaixo:
+Considerando então somente clientes Avon acionados no período de outubro/2014 até dezembro/2015 foram selecionados 5799 contratos. Destes, a proporção de contratos que pagaram sobre os que não pagaram (ao menos uma parcela) é mostrada abaixo:
 ```{r,echo=FALSE}
 t_prop <- prop.table(table(df_tidy$PAGO))
 sprintf("NÃO GERARAM PAGAMENTO: %s %%",round(t_prop[1],4)*100)
@@ -134,7 +137,7 @@ print(cf$byClass[8]) #Balanced Acuracy
 ```
 
 #### Curva ROC ####
-A curva ROC permite avaliar a performanca de um modelo. O conceito é que a linha reta na diagonal representa uma escolha aleatória de acionamentos. A linha curva representa a performance do modelo. Quanto maior a área embaixo desta curva, melhor a performance do modelo para previr os clientes que pagarão.
+A curva ROC permite avaliar a performance de um modelo. O conceito é que a linha reta na diagonal representa uma escolha aleatória de acionamentos. A linha curva representa a performance do modelo. Quanto maior a área embaixo desta curva, melhor a performance do modelo para previr os clientes que pagarão.
 Também é possivel obter a partir desta curva qual a melhor probabilidade de corte balanceada. Ou seja, tomando os clientes acima desta probabilidade temos o melhor resultado esperado em obter pagamentos.
 
 ```{r,echo=FALSE}

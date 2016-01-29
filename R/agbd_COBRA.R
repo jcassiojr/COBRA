@@ -18,8 +18,9 @@ registerDoMC(5) # parallel processing
 
 # lê dados raw em 3 data.frames: acionamentos, carteira Avon e pagamentos
 ##########################################################################
-l_raw <- f_leRawCobra()
- # obtém dataframe
+valor_divida = 1.0
+l_raw <- f_leRawCobra(valor_divida)
+# obtém dataframe
 df_acion <- l_raw[[1]]
 df_carteira <- l_raw[[2]]
 df_pg <- l_raw[[3]]
@@ -86,10 +87,18 @@ df_rank.cutoff <-
     df_rank.prev %>%
     filter(probClass >= valor_cutoff)
 
+# aplico a este best cutoff o filtro sugerido por Andre Carvalho
+# para valores acima de R$ 200
+df_rank.cutoff.M200 <-
+    df_rank.cutoff %>%
+    filter(df_rank.cutoff$divida > 200.0)
+
 # filtrando para valor de % dado
-df_rank.50 <-
-    df_rank.prev %>%
-    filter(probClass >= 0.5)
+#df_rank.50 <-
+#    df_rank.prev %>%
+#    filter(probClass >= 0.5)
+
+# filtrar para valores superiores a R$200 de divida
 #df_rank.40 <-
 #    df_rank.prev %>%
 #    filter(probClass >= 0.4)
@@ -102,11 +111,11 @@ df_rank.50 <-
 
 # salvando em planilhas os rankings obtidos
 #############################################
-write.xlsx(df_rank.50, "./data/Ranking-50.xlsx")
+#write.xlsx(df_rank.50, "./data/Ranking-50.xlsx")
 #write.xlsx(df_rank.40, "./data/Ranking-40.xlsx")
 #write.xlsx(df_rank.30, "./data/Ranking-30.xlsx")
 #write.xlsx(df_rank.20, "./data/Ranking-20.xlsx")
-write.xlsx(df_rank.cutoff, "./data/Ranking-cutoff.xlsx")
+write.xlsx(df_rank.cutoff.M200, "./data/Ranking-cutoff.xlsx")
 
 # obs: para ver resultado, obter performnce do memso mês de 2014 (dez(2014), jan(2015))
 

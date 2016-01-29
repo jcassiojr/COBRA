@@ -3,8 +3,17 @@
 f_geraTidyCobra <- function(df_acion_in, df_carteira_in, df_pg_in) {
 
     # obtendo somente os acionamentos de clientes Avon
+    
+    #---------------------------------------------------------------------------------
+    # abaixo inibido pois André falou que a base de acionamentos somente tem Avon!!!!!
     df_acion_avon <- inner_join(df_acion_in, df_carteira_in,by=c("CONTRATO"))
     
+    # Somente quando tiver a carteira completa Avon, inclusive inativos eu posso usar 
+    # a linha abaixo para testar com todos os acionamentos de 2014.
+    # df_acion_avon <- left_join(df_acion_in, df_carteira_in,by=c("CONTRATO"))
+    #---------------------------------------------------------------------------------
+    
+    # obtendo dia da semana e hora de acionamento
     df_acion_avon <-
         df_acion_avon %>%
         mutate (DATA.ACION = ymd_hms(DATA.ACION),

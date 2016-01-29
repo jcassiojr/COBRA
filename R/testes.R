@@ -174,3 +174,110 @@ options(digits=2)  # the default is 7, but it's more than I want now
 (zardoz = ts(rnorm(48), start=c(2293,6), frequency=12))
 # use window() if you want a part of a ts object
 (oz = window(zardoz, start=2293, end=c(2295,12)))
+
+
+#### 2016-01-27 - testes de correlação
+# obtar tb nro de acionamentos por contrato para transformar em feature (mas apenas tipo telefone e SMS)
+# filtrando somente os acionamentos de telefone (Ativo, Receptivo) e SMS
+
+#+++++++++++++++++++++++++++++++++++++
+#####################################
+# PARA DADOS DE ACIONAMENTOS TOTAIS
+df_acion.sms <-
+    df_acion %>%
+    filter(grepl("Envio de Sms",OCORRENCIA))
+
+# filtrando por Ativo, Passivo
+df_acion.fone <-
+    df_acion %>%
+    filter(grepl("Ativo|Receptivo",TIPO.ACION))
+
+# somando os dois filtros acima
+df_acion.sms_fone <-
+    df_acion %>%
+    filter(grepl("Ativo|Receptivo",TIPO.ACION) |
+           grepl("Envio de Sms",OCORRENCIA))
+
+# soma ativo por contrato
+df_acion.sum.ativo <-
+    df_acion.sms_fone %>%
+    filter(grepl("Ativo",TIPO.ACION)) %>%
+    group_by(CONTRATO) %>%
+    summarise(nro.atv = n())
+plot(df_acion.sum.ativo$nro.atv)
+# soma receptivo por contrato
+df_acion.sum.recep <-
+    df_acion.sms_fone %>%
+    filter(grepl("Receptivo",TIPO.ACION)) %>%
+    group_by(CONTRATO) %>%
+    summarise(nro.rec = n())
+plot(df_acion.sum.recep$nro.rec)
+# soma sms por contrato
+df_acion.sum.sms <-
+    df_acion.sms_fone %>%
+    filter(grepl("Envio de Sms",OCORRENCIA)) %>%
+    group_by(CONTRATO) %>%
+    summarise(nro.sms = n())
+plot(df_acion.sum.sms$nro.sms)
+
+# merge dos arquivos
+df_sum.acion <- merge(df_acion.sum.ativo,df_acion.sum.recep, by = "CONTRATO", all = TRUE)
+df_sum.acion <- merge(df_sum.acion,df_acion.sum.sms, by = "CONTRATO", all = TRUE)
+
+# correlacoes
+#tirando NAs
+df_nona <- na.omit(df_sum.acion)
+cor(df_nona$nro.atv, df_nona$nro.rec)
+
+# criar time serie para os valores de sms, ativoe  passivo sem somar
+# 
+df_acion.sms_fone <-
+    df_acion.sms_fone %>%
+    mutate (DATA.ACION = ymd_hms(DATA.ACION))
+
+# sumarizando por dia para gerar time series
+df.ts <-
+    df_acion.sms_fone %>%
+    mutate (DATA.ACION = round.POSIXt(df_acion.sms_fone$DATA.ACION, units = "days")) 
+    
+
+x <- sapply(df_acion.sms_fone$DATA.ACION[1:10],function(x) { round.POSIXt(x, units = "days") })
+
+
+
+# ATE AQUI
+
+# contando sms por contrato
+df_acion.sms.contr <-
+    df_acion.sms %>%
+    group_by(CONTRATO) %>%
+    summarise(nro.sms = n())
+summary(df_acion.sms.contr)
+
+# agora checando correlação entre nro SMS e pagto
+# proporção de acionamentos com sucesso sobre todos os acionamentos
+prop.table(table(df_acion$SUCESSO))
+table(df_acion$OCORRENCIA,df_acion$SUCESSO)
+# a aprtir daqui, considera sucesso    
+
+# PARA DADOS DE ACIONAMENTOS AVON SMS
+df_avon.sms <-
+    df_acion_avon %>%
+    filter(grepl("Envio de Sms",OCORRENCIA))
+
+# contando sms por contrato
+df_avon.nsms <-
+    df_avon.sms %>%
+    select(DATA.ACION, CONTRATO) %>%
+    group_by(CONTRATO) %>%
+    summarise(nro.sms = n())
+summary(df_avon.nsms)
+
+# plotando SMSs por data acion (criar serie temporal)
+hist(df_avon.nsms$nro.sms)
+# fazer gráfico no tempo de nro sms
+
+# agora checando correlação entre nro SMS e pagto
+
+
+    

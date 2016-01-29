@@ -17,9 +17,10 @@ f_previsao <- function(l_model_in, l_uso_in) {
     l_probs <- predict(l_model_in[[1]], useDescr, type = "prob")
     
     # concatenando probabilidades com identificação do cliente Avon
-    df_probs <- data.frame(ID = useID, probClass = l_probs[[1]]$S)
+    # alteracao: incluindo valor da divida para usar como corte
+    df_probs <- data.frame(ID = useID, divida = useDescr$VALOR.DEVIDO, probClass = l_probs[[1]]$S)
     
-    # ordenando pro maior probabilidade
+    # ordenando por maior probabilidade
     df_kank_out <-
         df_probs %>%
         arrange(desc(probClass))
