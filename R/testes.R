@@ -229,8 +229,8 @@ df_sum.acion <- merge(df_sum.acion,df_acion.sum.sms, by = "CONTRATO", all = TRUE
 df_nona <- na.omit(df_sum.acion)
 cor(df_nona$nro.atv, df_nona$nro.rec)
 
-# criar time serie para os valores de sms, ativoe  passivo sem somar
-# 
+# criar time serie para os valores de sms, ativo e passivo sem somar
+#--------------------------------------------------------------------
 library(lubridate)
 df_acion.sms_fone <-
     df_acion.sms_fone %>%
@@ -243,12 +243,41 @@ df_acion.sms_fone <-
 
 
 # abaixo ok
-y <- df_acion.sms_fone[1:10,]
-y$DIA.ACION <- trunc.POSIXt(y$DATA.ACION, units = "days")
+#y <- df_acion.sms_fone[1:10,]
+#y$DIA.ACION <- trunc.POSIXt(y$DATA.ACION, units = "days")
 
-df_acion.sms_fone$DIA.ACION <- trunc.POSIXt(df_acion.sms_fone$DATA.ACION, units = "days")
+df_acion.sms_fone$DIA.ACION <- as.POSIXct(trunc.POSIXt(df_acion.sms_fone$DATA.ACION, units = "days"))
+# agrupando por dia (obs: tem que converter para POSIXct para funcionar com dplyr!!!!)
+df_acion_dia <-
+    df_acion.sms_fone %>%
+    group_by(DIA.ACION) %>%
+    summarise(acions.dia = n())
+# POR DIA
+#ts_acion_dia <- ts(df_acion_dia$acions.dia, frequency=365, start=c(2014,365))
+#plot(ts_acion_dia)
+# ggplot 
+ggplot(df_acion_dia, aes(DIA.ACION, acions.dia)) + geom_line() + geom_smooth() +
+      xlab("") + ylab("Daily Views")
 
-# ATE AQUI ESTA OK. CONTINUANDO PARA GEAR TS.....
+### PAREI AQUI
+# FALTA: criar diferentes time series para: nro contratos/dia, nro pgtos/dia
+# nro sms/dia, nro ativo/dia, nro passivo, dia (combinar cada um no memso plot de pgto)
+# criar tb nro pgto/dia x nro/aciona/dia por cada operador
+
+
+ts_acion_tidy <- ts(df_acion.dia$N.ACION, frequency=365, start=c(2014,365))
+plot(ts_acion_tidy)
+# POR MÊS
+ts_acion_raw <- ts(df_raw.dia$N.ACION, frequency=12, start=c(2014,10))
+plot(ts_acion_raw)
+plot(lowess(ts_acion_raw),col="blue", lty="dashed") # aplicando filtro lowess
+ts_acion_tidy <- ts(df_acion.dia$N.ACION, frequency=12, start=c(2014,10))
+plot(ts_acion_tidy)
+plot(diff(log(ts_acion_tidy)), main="logged and diffed")
+
+
+
+# ATE AQUI ESTA OK. CONTINUANDO PARA GERAR TS.....
 
 # contando sms por contrato
 df_acion.sms.contr <-
