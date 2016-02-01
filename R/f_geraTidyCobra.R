@@ -8,6 +8,7 @@ f_geraTidyCobra <- function(df_acion_in, df_carteira_in, df_pg_in) {
     # abaixo inibido pois André falou que a base de acionamentos somente tem Avon!!!!!
     df_acion_avon <- inner_join(df_acion_in, df_carteira_in,by=c("CONTRATO"))
     
+    # A TESTAR
     # Somente quando tiver a carteira completa Avon, inclusive inativos eu posso usar 
     # a linha abaixo para testar com todos os acionamentos de 2014.
     # df_acion_avon <- left_join(df_acion_in, df_carteira_in,by=c("CONTRATO"))
@@ -21,9 +22,17 @@ f_geraTidyCobra <- function(df_acion_in, df_carteira_in, df_pg_in) {
                 HORA.ACION = hour(DATA.ACION)) 
     # ATENÇÃO: hora de acionamento não é muito confiável. sistema gera zerado!!
     # por isso, considerar somente acionamentos das 8 as 20 horas
+    # TESTEI: inibindo abaixo e mudança insignificante no modelo
     df_acion_avon <-
         df_acion_avon %>%
         filter (HORA.ACION %in% c(8:20))
+    
+    # testar somente com sms, ativo e passivo
+    # somando os dois filtros acima
+    df_acion_avon <-
+        df_acion_avon %>%
+        filter(grepl("Ativo|Receptivo",TIPO.ACION) |
+                   grepl("Envio de Sms",OCORRENCIA))
     
     # marcando os acionamentos que resultaram em pagamento
     # obtendo apenas o primeiro pagamento de cada contrato

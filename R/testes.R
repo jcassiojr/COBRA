@@ -231,21 +231,24 @@ cor(df_nona$nro.atv, df_nona$nro.rec)
 
 # criar time serie para os valores de sms, ativoe  passivo sem somar
 # 
+library(lubridate)
 df_acion.sms_fone <-
     df_acion.sms_fone %>%
     mutate (DATA.ACION = ymd_hms(DATA.ACION))
 
 # sumarizando por dia para gerar time series
-df.ts <-
-    df_acion.sms_fone %>%
-    mutate (DATA.ACION = round.POSIXt(df_acion.sms_fone$DATA.ACION, units = "days")) 
-    
-
-x <- sapply(df_acion.sms_fone$DATA.ACION[1:10],function(x) { round.POSIXt(x, units = "days") })
+#df.ts <-
+#    df_acion.sms_fone %>%
+#    mutate (DATA.ACION = round.POSIXt(df_acion.sms_fone$DATA.ACION, units = "days")) 
 
 
+# abaixo ok
+y <- df_acion.sms_fone[1:10,]
+y$DIA.ACION <- trunc.POSIXt(y$DATA.ACION, units = "days")
 
-# ATE AQUI
+df_acion.sms_fone$DIA.ACION <- trunc.POSIXt(df_acion.sms_fone$DATA.ACION, units = "days")
+
+# ATE AQUI ESTA OK. CONTINUANDO PARA GEAR TS.....
 
 # contando sms por contrato
 df_acion.sms.contr <-
@@ -279,5 +282,6 @@ hist(df_avon.nsms$nro.sms)
 
 # agora checando correlação entre nro SMS e pagto
 
-
+# TESTE
+# somente considerando para o modelo os daso de sms, ativo e passivo
     
