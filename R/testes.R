@@ -183,6 +183,13 @@ options(digits=2)  # the default is 7, but it's more than I want now
 #+++++++++++++++++++++++++++++++++++++
 #####################################
 # PARA DADOS DE ACIONAMENTOS TOTAIS
+valor_divida = 1.0
+l_raw <- f_leRawCobra(valor_divida)
+# obtém dataframe
+df_acion <- l_raw[[1]]
+df_carteira <- l_raw[[2]]
+df_pg <- l_raw[[3]]
+
 df_acion.sms <-
     df_acion %>%
     filter(grepl("Envio de Sms",OCORRENCIA))
@@ -241,7 +248,7 @@ df_acion.sms_fone <-
 #    df_acion.sms_fone %>%
 #    mutate (DATA.ACION = round.POSIXt(df_acion.sms_fone$DATA.ACION, units = "days")) 
 
-
+# A PARTIR DE ABAIXO OK
 # abaixo ok
 #y <- df_acion.sms_fone[1:10,]
 #y$DIA.ACION <- trunc.POSIXt(y$DATA.ACION, units = "days")
@@ -252,6 +259,7 @@ df_acion_dia <-
     df_acion.sms_fone %>%
     group_by(DIA.ACION) %>%
     summarise(acions.dia = n())
+df_acion_dia <- na.omit(df_acion_dia)
 # POR DIA
 #ts_acion_dia <- ts(df_acion_dia$acions.dia, frequency=365, start=c(2014,365))
 #plot(ts_acion_dia)
@@ -265,7 +273,7 @@ ggplot(df_acion_dia, aes(DIA.ACION, acions.dia)) + geom_line() + geom_smooth() +
 # criar tb nro pgto/dia x nro/aciona/dia por cada operador
 
 
-ts_acion_tidy <- ts(df_acion.dia$N.ACION, frequency=365, start=c(2014,365))
+ts_acion_tidy <- ts(df_acion_dia$acions.dia, frequency=365, start=c(2014,365))
 plot(ts_acion_tidy)
 # POR MÊS
 ts_acion_raw <- ts(df_raw.dia$N.ACION, frequency=12, start=c(2014,10))
@@ -312,5 +320,5 @@ hist(df_avon.nsms$nro.sms)
 # agora checando correlação entre nro SMS e pagto
 
 # TESTE
-# somente considerando para o modelo os daso de sms, ativo e passivo
+# somente considerando para o modelo os dados de sms, ativo e passivo
     
