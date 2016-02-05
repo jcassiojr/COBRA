@@ -7,10 +7,10 @@ library(XML)
 ## reading XML files
 # FALTA: carregar reconhecendo cedilha e acentos (UTF-8?)
 # Porque ler?
-# quantos contatos/dia (rodrigo já faz)
 # identificar o cpf da pessoa (no quadro ou na transcrição), associar ao dia
 # e pelo cpf identificar se pagou ou não (primeiro somente para dt pgto > chat, depois ir
 # experimentando com 10 dias pos chat, 20, 30, etc)
+# funcao que le cada xml, obtem cpf e email e grava em data frame com data de contato
 # segundo passo: identificar palavras termos usados para quem pagou ao menos uma vez
 # terceiro passo: identifica termos usados para quem pagou tudo
 # quarto passo: identificar palavras chave que indiquem que vale a pena novo contato (ex. quero pagar, etc)

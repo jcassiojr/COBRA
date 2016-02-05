@@ -319,6 +319,24 @@ hist(df_avon.nsms$nro.sms)
 
 # agora checando correlação entre nro SMS e pagto
 
-# TESTE
-# somente considerando para o modelo os dados de sms, ativo e passivo
-    
+# CORRELACAO ENTRE PGTOS e VALORES DE DIVIDAS, PGTO e DIAS ATRASO (scatter plot)
+# 1. corr divida x pgto
+#   a. obter todos de carteira pagos
+#   b. criar data frame com colunas contraro, divida, valor pago (somado por contrato), percentual da divida paga
+#   c. correlacionar divida x valor pago
+# 2. corr dias atraso x pgto
+#   a. inserir no data.frame acima coluna de dias atraso
+#   b. corr dias atraso x valor pago
+# 3. corr divida com percentual pago para ver se tem relacao
+
+# a. obter todos de carteira pagos
+# otem sumarizado por contrato, valor pago total e numero de pagamentos
+df_pg.contr <-
+    df_pg %>%
+    arrange(CONTRATO,DTpgto) %>%
+    group_by(CONTRATO) %>%
+    mutate(VALOR.PAGO = sum(VlPag),
+           NPARCELAS.PAGAS = n()) %>% # aqui cuidado, pois algumas parcelas se repetiram (??)
+    distinct(CONTRATO) %>%
+    select(-VlPag)
+
