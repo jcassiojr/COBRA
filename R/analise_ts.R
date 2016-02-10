@@ -1,6 +1,11 @@
 # análises exploratórias de time series
-require("gridExtra")
+#require("gridExtra")
 require("ggplot2")
+require("dplyr")
+require("xlsx")
+require("lubridate")
+require("grid")
+
 source("~/Documents/MyGit/COBRA/R/f_leRawCobra.R")
 valor_divida = 1.0
 l_raw <- f_leRawCobra(valor_divida)
@@ -15,25 +20,37 @@ df_pg <- l_raw[[3]]
 df_acion.atv <-
     df_acion %>%
     filter(grepl("Ativo",TIPO.ACION))
+# eliminando NAs
+df_acion.atv <- na.omit(df_acion.atv)
+
 # filtrando por Receptivo
 df_acion.rec <-
     df_acion %>%
     filter(grepl("Receptivo",TIPO.ACION))
+# eliminando NAs
+df_acion.rec <- na.omit(df_acion.rec)
+
 # filtrando por SMS
 df_acion.sms <-
     df_acion %>%
     filter(grepl("Envio de Sms",OCORRENCIA))
+# eliminando NAs
+df_acion.sms <- na.omit(df_acion.sms)
 
 # filtrando por Ativo, Receptivo
 df_acion.fone <-
     df_acion %>%
     filter(grepl("Ativo|Receptivo",TIPO.ACION))
+# eliminando NAs
+df_acion.fone <- na.omit(df_acion.fone)
 
 # somando os Ativo, c, SMS
 df_acion.sms_fone <-
     df_acion %>%
     filter(grepl("Ativo|Receptivo",TIPO.ACION) |
                grepl("Envio de Sms",OCORRENCIA))
+# eliminando NAs
+df_acion.sms_fone <- na.omit(df_acion.sms_fone)
 
 # ACIONAMENTOS DE SMS E FONE
 ##################
@@ -45,9 +62,9 @@ df_acion_dia <-
     df_acion.sms_fone %>%
     group_by(DIA.ACION) %>%
     summarise(acions.dia = n())
-# POR DIA
-#ts_acion_dia <- ts(df_acion_dia$acions.dia, frequency=365, start=c(2014,365))
-#plot(ts_acion_dia)
+# eliminando NAs
+df_acion_dia <- na.omit(df_acion_dia)
+
 # ggplot 
 pl_ac <- ggplot(df_acion_dia, aes(DIA.ACION, acions.dia)) + geom_line() + geom_smooth() +
     xlab("dia") + ylab("acionamentos") + ggtitle("Acionamentos (SMS e Fone)/Dia") +
@@ -57,14 +74,24 @@ pl_ac <- ggplot(df_acion_dia, aes(DIA.ACION, acions.dia)) + geom_line() + geom_s
 # PGTO
 ##############
 
-# agrupando por dia 
+# número de pgtos agrupando por dia 
 df_pg_dia <-
     df_pg %>%
     group_by(DTpgto) %>%
     summarise(pgto.dia = n())
 
 pl_pg <- ggplot(df_pg_dia, aes(DTpgto, pgto.dia)) + geom_line() + geom_smooth() +
-    xlab("dia") + ylab("pagamentos") + ggtitle("Pagamentos/Dia") + 
+    xlab("dia") + ylab("pagamentos") + ggtitle("Número de Pagamentos/Dia") + 
+    xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION)))
+
+# valor de pgtos agrupando por dia 
+df_vlpg_dia <-
+    df_pg %>%
+    group_by(DTpgto) %>%
+    summarise(vlpg.dia = sum(VlPag))
+
+pl_vlpg <- ggplot(df_vlpg_dia, aes(DTpgto, vlpg.dia)) + geom_line() + geom_smooth() +
+    xlab("dia") + ylab("pagamentos") + ggtitle("Valor de Pagamentos/Dia") + 
     xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION)))
 
 #grid.arrange(pl_ac,pl_pg, nrow=2, ncol=1)
@@ -117,6 +144,7 @@ df_acion_rec_dia <-
     df_acion.rec %>%
     group_by(DIA.ACION) %>%
     summarise(acions.dia = n())
+df_acion_rec_dia <- na.omit(df_acion_rec_dia)
 # POR DIA
 #ts_acion_dia <- ts(df_acion_dia$acions.dia, frequency=365, start=c(2014,365))
 #plot(ts_acion_dia)
@@ -127,7 +155,7 @@ pl_ac.rec <- ggplot(df_acion_rec_dia, aes(DIA.ACION, acions.dia)) + geom_line() 
 #grid.arrange(pl_ac,pl_pg, nrow=2, ncol=1)
 # outra alternativa a grid
 # plot por acionamento
-library(grid)
+
 pushViewport(viewport(layout = grid.layout(4, 1)))
 #print(pl_ac, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
 print(pl_pg, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
@@ -236,6 +264,24 @@ df_sms.06.24 <- read.csv2("./data/SMS/06 - Junho/24-06.csv", encoding="latin1",
                           stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
 df_sms.06.25 <- read.csv2("./data/SMS/06 - Junho/25-06.csv", encoding="latin1",
                           stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
+
+# agrupando por dia
+df_sms.06.2015 <- bind_rows(list(df_sms.06.01,
+                                 df_sms.06.02,
+                                 df_sms.06.05,
+                                 df_sms.06.08,
+                                 df_sms.06.09,
+                                 df_sms.06.10,
+                                 df_sms.06.11, 
+                                 df_sms.06.12, 
+                                 df_sms.06.15, 
+                                 df_sms.06.16, 
+                                 df_sms.06.17,
+                                 df_sms.06.19,
+                                 df_sms.06.23,
+                                 df_sms.06.24,
+                                 df_sms.06.25
+))
 
 # SMS de 07 2015
 df_sms.07.01 <- read.csv2("./data/SMS/07 - Julho/01-07.csv", encoding="latin1",
@@ -619,57 +665,305 @@ df_sms.2015 <-
     df_sms.2015 %>%
     filter(!(grepl("Não Recebido",Status)))
 
+# preparando formato correto de datas para plot
+df_sms.2015$Enviado.em <- as.Date(df_sms.2015$Enviado.em, "%d/%m/%Y")
+# transformando em PosixCt e truncando para tirar a hora
+#df_sms.2015$Enviado.em <- as.POSIXct(df_sms.2015$Enviado.em)
+df_sms.2015$Enviado.em <- as.POSIXct(trunc.POSIXt(df_sms.2015$Enviado.em, units = "days"))
+# agrupando por dia 
+df_sms.2015.tot <-
+    df_sms.2015 %>%
+    group_by(Enviado.em) %>%
+    summarise(acions.dia = n())
+
+# plotando time series
+pl_sms_tot <- ggplot(df_sms.2015.tot, aes(Enviado.em, acions.dia)) + geom_line() + geom_smooth() +
+    xlab("dia") + ylab("acionamentos") + ggtitle("SMS Total/Dia") +
+    xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION))) +
+    ylim(c(min(df_sms.2015.tot$acions.dia),max(df_sms.2015.tot$acions.dia)))
+
 # separando não confirmados de confirmados
 
-# ACIONAMENTOS
+# ACIONAMENTOS SMS
 ##################
 # filtrando Confirmados
+#########################
 df_sms.2015.conf <-
     df_sms.2015 %>%
     filter(grepl("Entregue com Confirmação",Status))
 
-# preparando para plot de time serie
-library(lubridate)
 # primeiro cnvertendo coluna em formato Date
 #as.Date(d, "%d/%m/%Y")
 #  obs: tem que converter para POSIXct para funcionar com dplyr!!!!
-df_sms.2015.conf$Enviado.em <- as.Date(df_sms.2015.conf$Enviado.em, "%d/%m/%Y")
+#df_sms.2015.conf$Enviado.em <- as.Date(df_sms.2015.conf$Enviado.em, "%d/%m/%Y")
 # transformando em PosixCt
-df_sms.2015.conf$Enviado.em <- as.POSIXct(df_sms.2015.conf$Enviado.em)
+#df_sms.2015.conf$Enviado.em <- as.POSIXct(df_sms.2015.conf$Enviado.em)
 # agrupando por dia 
 df_sms.2015.conf <-
     df_sms.2015.conf %>%
     group_by(Enviado.em) %>%
     summarise(acions.dia = n())
 
-# filtrando Não Confirmados
-df_sms.2015.nconf <-
-    df_sms.2015 %>%
-    filter(grepl("Entregue sem Confirmação",Status))
-library(ggplot2)
 # plotando time series
 pl_sms <- ggplot(df_sms.2015.conf, aes(Enviado.em, acions.dia)) + geom_line() + geom_smooth() +
     xlab("dia") + ylab("acionamentos") + ggtitle("SMS com Recebimento Confirmado/Dia") +
-    xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION)))
+    xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION))) +
+    ylim(c(min(df_sms.2015.tot$acions.dia),max(df_sms.2015.tot$acions.dia)))
+
+# filtrando Não Confirmados
+##############################
+df_sms.2015.nconf <-
+    df_sms.2015 %>%
+    filter(grepl("Entregue sem Confirmação",Status))
+
+# primeiro cnvertendo coluna em formato Date
+#as.Date(d, "%d/%m/%Y")
+#  obs: tem que converter para POSIXct para funcionar com dplyr!!!!
+#df_sms.2015.nconf$Enviado.em <- as.Date(df_sms.2015.nconf$Enviado.em, "%d/%m/%Y")
+# transformando em PosixCt
+#df_sms.2015.nconf$Enviado.em <- as.POSIXct(df_sms.2015.nconf$Enviado.em)
+# agrupando por dia 
+df_sms.2015.nconf <-
+    df_sms.2015.nconf %>%
+    group_by(Enviado.em) %>%
+    summarise(acions.dia = n())
+
+# plotando time series
+pl_sms_nconf <- ggplot(df_sms.2015.nconf, aes(Enviado.em, acions.dia)) + geom_line() + geom_smooth() +
+    xlab("dia") + ylab("acionamentos") + ggtitle("SMS com Recebimento NÃO Confirmado/Dia") +
+    xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION))) +
+    ylim(c(min(df_sms.2015.tot$acions.dia),max(df_sms.2015.tot$acions.dia)))
 
 
+# cria grid
+pushViewport(viewport(layout = grid.layout(5, 1)))
+#print(pl_ac, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+print(pl_pg, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+print(pl_vlpg, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
+print(pl_sms, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
+print(pl_sms_nconf, vp = viewport(layout.pos.row = 4, layout.pos.col = 1))
+print(pl_sms_tot, vp = viewport(layout.pos.row = 5, layout.pos.col = 1))
 
 
+#----------------------------------------------
+# ABAIXO correlacionar time series
+# correlacionar nro de pgtos e velor de pgtos com
+# 1. sms enviados com confirmação
+# 2. sms enviados sem confirmação
+# 3. sms totais enviados
+# 4. ativos
+# 5. receptivos
+# -----------------------------------------------
+# mostra lag entre acionamento e pgto
+# antes fazer merge por dia para colocar os valores no mesmo dia
+# correlação positiva significa que quando uma cresce a outra tb e vice-versa
+# o valor do eixo y indica a correlação (max = 1)
+# o fato de existir lag (pico fora do zero no eixo x) significa que uma variável conduz a outra,
+# ou seja, não podemos prever o movimento de uma variável olhando para a outra
 
+# 1. sms enviado com confirmação x qtde de pgtos
+my.corr.npg <- df_pg_dia
+my.corr.vlpg <- df_pg_vl_dia
+#y <- df_acion_atv_dia
+my.corr.npg$DTpgto <- as.character(my.corr.npg$DTpgto)
+my.corr.vlpg$DTpgto <- as.character(my.corr.vlpg$DTpgto)
+#y$DIA.ACION <- as.character(y$DIA.ACION)
+#z <- full_join(my.corr.pg,y, by=c("DTpgto" = "DIA.ACION"))
+#z <- na.omit(z)
+#ccf(z$acions.dia ,z$pgto.dia)
+#ccf(z$pgto.dia ,z$acions.dia)
+# correlacionar sms confirmado com nro pgto
+#############################
+my.corr.sms.conf <- df_sms.2015.conf
+my.corr.sms.conf$Enviado.em <- as.character(my.corr.sms.conf$Enviado.em)
+z2 <- full_join(my.corr.npg,my.corr.sms.conf, by=c("DTpgto" = "Enviado.em"))
+z2 <- na.omit(z2)
+# correlação com nro de pgtos dia
+ccf(z2$acions.dia ,z2$pgto.dia)
 
+# 1. sms enviado com confirmação x qtde de pgtos
+z3 <- full_join(my.corr.vlpg,my.corr.sms.conf, by=c("DTpgto" = "Enviado.em"))
+z3 <- na.omit(z3)
+ccf(z3$acions.dia ,z3$pgto.dia)
 
+# 2. sms enviado SEM confirmação x qtde de pgtos
+################################################
+my.corr.sms.nconf <- df_sms.2015.nconf
+my.corr.sms.nconf$Enviado.em <- as.character(my.corr.sms.nconf$Enviado.em)
+z4 <- full_join(my.corr.npg,my.corr.sms.nconf, by=c("DTpgto" = "Enviado.em"))
+z4 <- na.omit(z4)
+# correlação com nro de pgtos dia
+ccf(z4$acions.dia ,z4$pgto.dia)
 
+# 2. sms enviado SEM confirmação x qtde de pgtos
+z5 <- full_join(my.corr.vlpg,my.corr.sms.nconf, by=c("DTpgto" = "Enviado.em"))
+z5 <- na.omit(z5)
+ccf(z5$acions.dia ,z5$pgto.dia)
 
+# 3. sms totais enviados
+my.corr.sms.tot <- df_sms.2015.tot
+my.corr.sms.tot$Enviado.em <- as.character(my.corr.sms.tot$Enviado.em)
+z6 <- full_join(my.corr.npg,my.corr.sms.tot, by=c("DTpgto" = "Enviado.em"))
+z6 <- na.omit(z6)
+# correlação com nro de pgtos dia
+ccf(z6$acions.dia ,z6$pgto.dia)
 
-# confirmado: no memso dia não se repetiram envios ao mesmo celular
-#x <-
-#    df_sms.04.2015 %>%
-#    group_by(Celular)
+# 2. sms enviado SEM confirmação x qtde de pgtos
+z7 <- full_join(my.corr.vlpg,my.corr.sms.tot, by=c("DTpgto" = "Enviado.em"))
+z7 <- na.omit(z7)
+ccf(z7$acions.dia ,z7$pgto.dia)
 
+# 4. ativos x pgtos
+# pegar dos arquivos, somente ligaçoes completadas
+
+# TELEFONIA ATIVA E RECEPTIVA de 2015
+# janeiro
+df_tel.1.01.2015 <- read.csv2("./data/TELEFONIA/01 - Janeiro/01-10.csv", encoding="latin1",
+                          stringsAsFactors = FALSE, header = TRUE, sep = ";")
+df_tel.2.01.2015 <- read.csv2("./data/TELEFONIA/01 - Janeiro/11-20.csv", encoding="latin1",
+                            stringsAsFactors = FALSE, header = TRUE, sep = ";")
+df_tel.3.01.2015 <- read.csv2("./data/TELEFONIA/01 - Janeiro/21-31.csv", encoding="latin1",
+                            stringsAsFactors = FALSE, header = TRUE, sep = ";")
+# fevereiro
+df_tel.1.02.2015 <- read.csv2("./data/TELEFONIA/02 - Fevereiro/01-20.csv", encoding="latin1",
+                               stringsAsFactors = FALSE, header = TRUE, sep = ";")
+df_tel.2.02.2015 <- read.csv2("./data/TELEFONIA/02 - Fevereiro/21-28.csv", encoding="latin1",
+                               stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+#março
+df_tel.1.03.2015 <- read.csv2("./data/TELEFONIA/03 - Março/01-20.csv", encoding="latin1",
+                               stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.2.03.2015 <- read.csv2("./data/TELEFONIA/03 - Março/21-27.csv", encoding="latin1",
+                               stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.3.03.2015 <- read.csv2("./data/TELEFONIA/03 - Março/28-31.csv", encoding="latin1",
+                               stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+# abril
+df_tel.1.04.2015 <- read.csv2("./data/TELEFONIA/04 - Abril/01-08.csv", encoding="latin1",
+                               stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.2.04.2015 <- read.csv2("./data/TELEFONIA/04 - Abril/09-14.csv", encoding="latin1",
+                               stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.3.04.2015 <- read.csv2("./data/TELEFONIA/04 - Abril/15-22.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.4.04.2015 <- read.csv2("./data/TELEFONIA/04 - Abril/23-29.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.5.04.2015 <- read.csv2("./data/TELEFONIA/04 - Abril/30.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+# maio
+df_tel.1.05.2015 <- read.csv2("./data/TELEFONIA/05 - Maio/01-07.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.2.05.2015 <- read.csv2("./data/TELEFONIA/05 - Maio/08-14.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.3.05.2015 <- read.csv2("./data/TELEFONIA/05 - Maio/15-22.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.4.05.2015 <- read.csv2("./data/TELEFONIA/05 - Maio/23-31.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+# junho
+df_tel.1.06.2015 <- read.csv2("./data/TELEFONIA/06 - Junho/01-10.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.2.06.2015 <- read.csv2("./data/TELEFONIA/06 - Junho/11-18.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.3.06.2015 <- read.csv2("./data/TELEFONIA/06 - Junho/19-24.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.4.06.2015 <- read.csv2("./data/TELEFONIA/06 - Junho/25-30.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+# julho
+df_tel.1.07.2015 <- read.csv2("./data/TELEFONIA/07 - Julho/01-06.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.2.07.2015 <- read.csv2("./data/TELEFONIA/07 - Julho/07-12.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.3.07.2015 <- read.csv2("./data/TELEFONIA/07 - Julho/13-19.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.4.07.2015 <- read.csv2("./data/TELEFONIA/07 - Julho/20-27.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.5.07.2015 <- read.csv2("./data/TELEFONIA/07 - Julho/28-31.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+# agosto
+df_tel.1.08.2015 <- read.csv2("./data/TELEFONIA/08 - Agosto/01-20.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.2.08.2015 <- read.csv2("./data/TELEFONIA/08 - Agosto/21-31.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+# setembro
+df_tel.1.09.2015 <- read.csv2("./data/TELEFONIA/09 - Setembro/01-20.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.2.09.2015 <- read.csv2("./data/TELEFONIA/09 - Setembro/21-30.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+# outubro
+df_tel.1.10.2015 <- read.csv2("./data/TELEFONIA/10 - Outubro/01-20.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.2.10.2015 <- read.csv2("./data/TELEFONIA/10 - Outubro/21-31.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+# novembro
+df_tel.1.11.2015 <- read.csv2("./data/TELEFONIA/11 - Novembro/01-20.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+df_tel.2.11.2015 <- read.csv2("./data/TELEFONIA/11 - Novembro/21-30.csv", encoding="latin1",
+                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
+
+# concatenando todos os meses
+df_tel.2015 <- bind_rows(list(df_tel.1.01.2015,
+                              df_tel.2.01.2015,
+                              df_tel.3.01.2015,
+                              df_tel.1.02.2015,
+                              df_tel.2.02.2015,
+                              df_tel.1.03.2015,
+                              df_tel.2.03.2015,
+                              df_tel.3.03.2015,
+                              df_tel.1.04.2015,
+                              df_tel.2.04.2015,
+                              df_tel.3.04.2015,
+                              df_tel.4.04.2015,
+                              df_tel.5.04.2015,
+                              df_tel.1.05.2015,
+                              df_tel.2.05.2015,
+                              df_tel.3.05.2015,
+                              df_tel.4.05.2015,
+                              df_tel.1.06.2015,
+                              df_tel.2.06.2015,
+                              df_tel.3.06.2015,
+                              df_tel.4.06.2015,
+                              df_tel.1.07.2015,
+                              df_tel.2.07.2015,
+                              df_tel.3.07.2015,
+                              df_tel.4.07.2015,
+                              df_tel.5.07.2015,
+                              df_tel.1.08.2015,
+                              df_tel.2.08.2015,
+                              df_tel.1.09.2015,
+                              df_tel.2.09.2015,
+                              df_tel.1.10.2015,
+                              df_tel.2.10.2015,
+                              df_tel.1.11.2015,
+                              df_tel.2.11.2015
+                              ))
+# selecionar apenas as completadas
+df_tel.2015 <-
+    df_tel.2015 %>%
+    filter(Status == "Completada")
+
+# falta: tratar as datas, criar o data frame sumarizado por dia e fazer o plot e a correlação
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++++++++++++++++++++++++++++++++++++++
 # ATE AQUI OK
+
+
+# USANDO PACOTE TS
+ts_acion_dia <- ts(df_sms.2015.tot$acions.dia , frequency=365, start=c(2014,365))
+plot(ts_acion_dia)
+
+# decompose time series
+f <- decompose(ts_acion_dia)
+# seasonal figures
+f$figure
+
+
+
+
+#++++++++++++++++++++++
+
+
+
+
+
 
 # testando correlação entre acionamento e pagamento
 # antes fazer o merge para pegar as mesmas datas
