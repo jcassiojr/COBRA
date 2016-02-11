@@ -94,6 +94,29 @@ pl_vlpg <- ggplot(df_vlpg_dia, aes(DTpgto, vlpg.dia)) + geom_line() + geom_smoot
     xlab("dia") + ylab("pagamentos") + ggtitle("Valor de Pagamentos/Dia") + 
     xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION)))
 
+# IMPORTANTE ABAIXO: considerando somente o primeiro pgto de cada contrato/dia
+# considerando somente o primiro pagamento de cada contrato
+df_pg.primpg <- 
+    df_pg %>%
+    group_by(CONTRATO) %>%
+    filter(DTpgto == min(DTpgto))
+# agrupa por dia
+df_pg.primpg_dia <- 
+    df_pg.primpg %>%
+    group_by(DTpgto) %>%
+    summarise(vlpg.dia = sum(VlPag),
+              pgto.dia = n())
+
+pl_prim_npg <- ggplot(df_pg.primpg_dia, aes(DTpgto, pgto.dia)) + geom_line() + geom_smooth() +
+    xlab("dia") + ylab("pagamentos") + ggtitle("Qtde de 1o Pagamento/Dia") + 
+    xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION)))
+
+pl_prim_vlpg <- ggplot(df_pg.primpg_dia, aes(DTpgto,vlpg.dia)) + geom_line() + geom_smooth() +
+    xlab("dia") + ylab("pagamentos") + ggtitle("Valor de 1o Pagamento/Dia") + 
+    xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION)))
+
+
+
 #grid.arrange(pl_ac,pl_pg, nrow=2, ncol=1)
 # outra alternativa a grid
 #library(grid)
@@ -209,6 +232,8 @@ df_sms.04.28 <- read.csv2("./data/SMS/04 - Abril/28-04.csv", encoding="latin1",
 # agrupando por dia
 df_sms.04.2015 <- bind_rows(list(df_sms.04.08,df_sms.04.13,df_sms.04.15,df_sms.04.16,
                                 df_sms.04.17,df_sms.04.22,df_sms.04.23,df_sms.04.27,df_sms.04.28))
+rm(list = c("df_sms.04.08","df_sms.04.13","df_sms.04.15","df_sms.04.16",
+            "df_sms.04.17","df_sms.04.22","df_sms.04.23","df_sms.04.27","df_sms.04.28"))
 # SMS de 05 2015
 df_sms.05.04 <- read.csv2("./data/SMS/05 - Maio/04-05.csv", encoding="latin1",
                           stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
@@ -232,6 +257,8 @@ df_sms.05.27 <- read.csv2("./data/SMS/05 - Maio/27-05.csv", encoding="latin1",
 # agrupando por dia
 df_sms.05.2015 <- bind_rows(list(df_sms.05.04,df_sms.05.05,df_sms.05.07,df_sms.05.12,
                                  df_sms.05.14,df_sms.05.19,df_sms.05.22,df_sms.05.26,df_sms.05.27))
+rm(list = c("df_sms.05.04","df_sms.05.05","df_sms.05.07","df_sms.05.12",
+            "df_sms.05.14","df_sms.05.19","df_sms.05.22","df_sms.05.26","df_sms.05.27"))
 
 # SMS de 06 2015
 df_sms.06.01 <- read.csv2("./data/SMS/06 - Junho/01-06.csv", encoding="latin1",
@@ -282,6 +309,21 @@ df_sms.06.2015 <- bind_rows(list(df_sms.06.01,
                                  df_sms.06.24,
                                  df_sms.06.25
 ))
+rm(list = c("df_sms.06.01",
+            "df_sms.06.02",
+            "df_sms.06.05",
+            "df_sms.06.08",
+            "df_sms.06.09",
+            "df_sms.06.10",
+            "df_sms.06.11", 
+            "df_sms.06.12", 
+            "df_sms.06.15", 
+            "df_sms.06.16", 
+            "df_sms.06.17",
+            "df_sms.06.19",
+            "df_sms.06.23",
+            "df_sms.06.24",
+            "df_sms.06.25"))
 
 # SMS de 07 2015
 df_sms.07.01 <- read.csv2("./data/SMS/07 - Julho/01-07.csv", encoding="latin1",
@@ -347,6 +389,7 @@ df_sms.07.2015 <- bind_rows(list(df_sms.07.01,
                                  df_sms.07.07,
                                  df_sms.07.08,
                                  df_sms.07.09,
+                                 df_sms.07.10,
                                  df_sms.07.11,
                                  df_sms.07.13, 
                                  df_sms.07.14, 
@@ -365,6 +408,32 @@ df_sms.07.2015 <- bind_rows(list(df_sms.07.01,
                                  df_sms.07.29,
                                  df_sms.07.30
                                  ))
+rm(list = c("df_sms.07.01",
+            "df_sms.07.02",
+            "df_sms.07.03",
+            "df_sms.07.04",
+            "df_sms.07.06",
+            "df_sms.07.07",
+            "df_sms.07.08",
+            "df_sms.07.09",
+            "df_sms.07.10",
+            "df_sms.07.11",
+            "df_sms.07.13", 
+            "df_sms.07.14", 
+            "df_sms.07.15", 
+            "df_sms.07.16", 
+            "df_sms.07.17",
+            "df_sms.07.18",
+            "df_sms.07.20",
+            "df_sms.07.21",
+            "df_sms.07.22",
+            "df_sms.07.23",
+            "df_sms.07.24",
+            "df_sms.07.25",
+            "df_sms.07.27",
+            "df_sms.07.28",
+            "df_sms.07.29",
+            "df_sms.07.30"))
 
 # SMS de 08 2015
 df_sms.08.04 <- read.csv2("./data/SMS/08 - Agosto/04-08.csv", encoding="latin1",
@@ -440,6 +509,30 @@ df_sms.08.2015 <- bind_rows(list(df_sms.08.04,
                                  df_sms.08.31
 ))
 
+rm(list = c("df_sms.08.04",
+            "df_sms.08.05",
+            "df_sms.08.06",
+            "df_sms.08.07",
+            "df_sms.08.10",
+            "df_sms.08.11",
+            "df_sms.08.12",
+            "df_sms.08.13",
+            "df_sms.08.14",
+            "df_sms.08.15", 
+            "df_sms.08.17", 
+            "df_sms.08.18", 
+            "df_sms.08.19", 
+            "df_sms.08.20",
+            "df_sms.08.21",
+            "df_sms.08.24",
+            "df_sms.08.25",
+            "df_sms.08.26",
+            "df_sms.08.27",
+            "df_sms.08.28",
+            "df_sms.08.29",
+            "df_sms.08.30",
+            "df_sms.08.31"))
+
 # SMS de 09 2015
 df_sms.09.01 <- read.csv2("./data/SMS/09 - Setembro/01-09.csv", encoding="latin1",
                           stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
@@ -499,6 +592,7 @@ df_sms.09.2015 <- bind_rows(list(df_sms.09.01,
                                  df_sms.09.09,
                                  df_sms.09.10,
                                  df_sms.09.11,
+                                 df_sms.09.12,
                                  df_sms.09.14,
                                  df_sms.09.15, 
                                  df_sms.09.16, 
@@ -515,6 +609,31 @@ df_sms.09.2015 <- bind_rows(list(df_sms.09.01,
                                  df_sms.09.29,
                                  df_sms.09.30
 ))
+
+rm(list = c("df_sms.09.01",
+            "df_sms.09.02",
+            "df_sms.09.03",
+            "df_sms.09.04",
+            "df_sms.09.08",
+            "df_sms.09.09",
+            "df_sms.09.10",
+            "df_sms.09.11",
+            "df_sms.09.12",
+            "df_sms.09.14",
+            "df_sms.09.15", 
+            "df_sms.09.16", 
+            "df_sms.09.17", 
+            "df_sms.09.18", 
+            "df_sms.09.19",
+            "df_sms.09.21",
+            "df_sms.09.22",
+            "df_sms.09.23",
+            "df_sms.09.24",
+            "df_sms.09.25",
+            "df_sms.09.26",
+            "df_sms.09.28",
+            "df_sms.09.29",
+            "df_sms.09.30"))
 
 # SMS de 10 2015
 df_sms.10.01 <- read.csv2("./data/SMS/10 - Outubro/01.csv", encoding="latin1",
@@ -574,6 +693,25 @@ df_sms.10.2015 <- bind_rows(list(df_sms.10.01,
                                  df_sms.10.29,
                                  df_sms.10.30
 ))
+rm(list = c("df_sms.10.01",
+            "df_sms.10.02",
+            "df_sms.10.03",
+            "df_sms.10.05",
+            "df_sms.10.06",
+            "df_sms.10.07",
+            "df_sms.10.08",
+            "df_sms.10.09",
+            "df_sms.10.13",
+            "df_sms.10.14", 
+            "df_sms.10.15", 
+            "df_sms.10.16", 
+            "df_sms.10.19", 
+            "df_sms.10.23",
+            "df_sms.10.26",
+            "df_sms.10.28",
+            "df_sms.10.29",
+            "df_sms.10.30"))
+
 
 # SMS de 11 2015
 df_sms.11.03 <- read.csv2("./data/SMS/11 - Novembro/03.csv", encoding="latin1",
@@ -643,6 +781,28 @@ df_sms.11.2015 <- bind_rows(list(df_sms.11.03,
                                  df_sms.11.30
 ))
 
+rm(list = c("df_sms.11.03",
+            "df_sms.11.04",
+            "df_sms.11.05",
+            "df_sms.11.06",
+            "df_sms.11.09",
+            "df_sms.11.10",
+            "df_sms.11.11",
+            "df_sms.11.12",
+            "df_sms.11.13",
+            "df_sms.11.16", 
+            "df_sms.11.17", 
+            "df_sms.11.18", 
+            "df_sms.11.19", 
+            "df_sms.11.20",
+            "df_sms.11.22",
+            "df_sms.11.23",
+            "df_sms.11.24",
+            "df_sms.11.25",
+            "df_sms.11.26",
+            "df_sms.11.27",
+            "df_sms.11.30"))
+
 # concatenando todos os meses
 df_sms.2015 <- bind_rows(list(df_sms.04.2015,
                               df_sms.05.2015,
@@ -652,9 +812,20 @@ df_sms.2015 <- bind_rows(list(df_sms.04.2015,
                               df_sms.09.2015,
                               df_sms.10.2015,
                               df_sms.11.2015))
+
+rm(list = c("df_sms.04.2015",
+            "df_sms.05.2015",
+            "df_sms.06.2015",
+            "df_sms.07.2015",
+            "df_sms.08.2015",
+            "df_sms.09.2015",
+            "df_sms.10.2015",
+            "df_sms.11.2015"))
+
 # agrupar totais por dia, totais pro dia sem confirmação, totais por dia com confirmação
 # estatísticas iniciais
 #table(df_sms.2015$Status)
+table(df_sms.2015$Status)
 prop.table(table(df_sms.2015$Status))
 # eliminando não recebidos e bloqueados
 df_sms.2015 <-
@@ -681,6 +852,11 @@ pl_sms_tot <- ggplot(df_sms.2015.tot, aes(Enviado.em, acions.dia)) + geom_line()
     xlab("dia") + ylab("acionamentos") + ggtitle("SMS Total/Dia") +
     xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION))) +
     ylim(c(min(df_sms.2015.tot$acions.dia),max(df_sms.2015.tot$acions.dia)))
+
+pushViewport(viewport(layout = grid.layout(3, 1)))
+print(pl_sms_tot, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+print(pl_pg, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
+print(pl_vlpg, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
 
 # separando não confirmados de confirmados
 
@@ -736,13 +912,13 @@ pl_sms_nconf <- ggplot(df_sms.2015.nconf, aes(Enviado.em, acions.dia)) + geom_li
 
 
 # cria grid
-pushViewport(viewport(layout = grid.layout(5, 1)))
-#print(pl_ac, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
-print(pl_pg, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
-print(pl_vlpg, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
-print(pl_sms, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
-print(pl_sms_nconf, vp = viewport(layout.pos.row = 4, layout.pos.col = 1))
-print(pl_sms_tot, vp = viewport(layout.pos.row = 5, layout.pos.col = 1))
+#pushViewport(viewport(layout = grid.layout(5, 1)))
+
+#print(pl_pg, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+#print(pl_vlpg, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
+#print(pl_sms, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
+#print(pl_sms_nconf, vp = viewport(layout.pos.row = 4, layout.pos.col = 1))
+#print(pl_sms_tot, vp = viewport(layout.pos.row = 5, layout.pos.col = 1))
 
 
 #----------------------------------------------
@@ -761,12 +937,16 @@ print(pl_sms_tot, vp = viewport(layout.pos.row = 5, layout.pos.col = 1))
 # o fato de existir lag (pico fora do zero no eixo x) significa que uma variável conduz a outra,
 # ou seja, não podemos prever o movimento de uma variável olhando para a outra
 
-# 1. sms enviado com confirmação x qtde de pgtos
+# 1. Correlação sms enviado com confirmação x qtde de pgtos
 my.corr.npg <- df_pg_dia
 my.corr.vlpg <- df_pg_vl_dia
-#y <- df_acion_atv_dia
 my.corr.npg$DTpgto <- as.character(my.corr.npg$DTpgto)
 my.corr.vlpg$DTpgto <- as.character(my.corr.vlpg$DTpgto)
+# considerando apenas primeiro pgto
+my.corr.prpg <- df_pg.primpg_dia
+my.corr.prpg$DTpgto <- as.character(my.corr.prpg$DTpgto)
+#y <- df_acion_atv_dia
+
 #y$DIA.ACION <- as.character(y$DIA.ACION)
 #z <- full_join(my.corr.pg,y, by=c("DTpgto" = "DIA.ACION"))
 #z <- na.omit(z)
@@ -776,42 +956,63 @@ my.corr.vlpg$DTpgto <- as.character(my.corr.vlpg$DTpgto)
 #############################
 my.corr.sms.conf <- df_sms.2015.conf
 my.corr.sms.conf$Enviado.em <- as.character(my.corr.sms.conf$Enviado.em)
-z2 <- full_join(my.corr.npg,my.corr.sms.conf, by=c("DTpgto" = "Enviado.em"))
-z2 <- na.omit(z2)
 # correlação com nro de pgtos dia
-ccf(z2$acions.dia ,z2$pgto.dia)
+z2 <- full_join(my.corr.npg,my.corr.sms.conf, by=c("DTpgto" = "Enviado.em"))
+#z2 <- na.omit(z2)
+ccf(z2$acions.dia ,z2$pgto.dia, na.action = na.pass)
+# correlação com nro de primeiros pgtos dia
+z22 <- full_join(my.corr.prpg,my.corr.sms.conf, by=c("DTpgto" = "Enviado.em"))
+#z22 <- na.omit(z22)
+ccf(z22$acions.dia ,z22$pgto.dia, na.action = na.pass)
 
-# 1. sms enviado com confirmação x qtde de pgtos
+# 1. sms enviado com confirmação x valor de pgtos
 z3 <- full_join(my.corr.vlpg,my.corr.sms.conf, by=c("DTpgto" = "Enviado.em"))
-z3 <- na.omit(z3)
-ccf(z3$acions.dia ,z3$pgto.dia)
+#z3 <- na.omit(z3)
+ccf(z3$acions.dia ,z3$pgto.dia, na.action = na.pass)
+# correlação com nro de primeiros pgtos dia
+z33 <- full_join(my.corr.prpg,my.corr.sms.conf, by=c("DTpgto" = "Enviado.em"))
+ccf(z33$acions.dia ,z33$vlpg.dia, na.action = na.pass)
 
 # 2. sms enviado SEM confirmação x qtde de pgtos
 ################################################
 my.corr.sms.nconf <- df_sms.2015.nconf
 my.corr.sms.nconf$Enviado.em <- as.character(my.corr.sms.nconf$Enviado.em)
 z4 <- full_join(my.corr.npg,my.corr.sms.nconf, by=c("DTpgto" = "Enviado.em"))
-z4 <- na.omit(z4)
+#z4 <- na.omit(z4)
 # correlação com nro de pgtos dia
-ccf(z4$acions.dia ,z4$pgto.dia)
+ccf(z4$acions.dia ,z4$pgto.dia, na.action = na.pass)
+# com primeiro pgto (qtde)
+z44 <- full_join(my.corr.prpg,my.corr.sms.nconf, by=c("DTpgto" = "Enviado.em"))
+ccf(z44$acions.dia ,z44$pgto.dia, na.action = na.pass)
 
-# 2. sms enviado SEM confirmação x qtde de pgtos
+
+# 2. sms enviado SEM confirmação x valor de pgtos
 z5 <- full_join(my.corr.vlpg,my.corr.sms.nconf, by=c("DTpgto" = "Enviado.em"))
-z5 <- na.omit(z5)
-ccf(z5$acions.dia ,z5$pgto.dia)
+#z5 <- na.omit(z5)
+ccf(z5$acions.dia ,z5$pgto.dia, na.action = na.pass)
+
+# com primeiro pgto (valor)
+z55 <- full_join(my.corr.prpg,my.corr.sms.nconf, by=c("DTpgto" = "Enviado.em"))
+ccf(z55$acions.dia ,z55$vlpg.dia, na.action = na.pass)
 
 # 3. sms totais enviados
 my.corr.sms.tot <- df_sms.2015.tot
 my.corr.sms.tot$Enviado.em <- as.character(my.corr.sms.tot$Enviado.em)
 z6 <- full_join(my.corr.npg,my.corr.sms.tot, by=c("DTpgto" = "Enviado.em"))
-z6 <- na.omit(z6)
+#z6 <- na.omit(z6)
 # correlação com nro de pgtos dia
-ccf(z6$acions.dia ,z6$pgto.dia)
+ccf(z6$acions.dia ,z6$pgto.dia, na.action = na.pass)
+# com primeiro pgto (qtde)
+z66 <- full_join(my.corr.prpg,my.corr.sms.tot, by=c("DTpgto" = "Enviado.em"))
+ccf(z66$acions.dia ,z66$pgto.dia, na.action = na.pass)
 
-# 2. sms enviado SEM confirmação x qtde de pgtos
+# 2. sms enviado SEM confirmação x valor de pgtos
 z7 <- full_join(my.corr.vlpg,my.corr.sms.tot, by=c("DTpgto" = "Enviado.em"))
-z7 <- na.omit(z7)
-ccf(z7$acions.dia ,z7$pgto.dia)
+#z7 <- na.omit(z7)
+ccf(z7$acions.dia ,z7$pgto.dia, na.action = na.pass)
+# com primeiro pgto (valor)
+z77 <- full_join(my.corr.prpg,my.corr.sms.nconf, by=c("DTpgto" = "Enviado.em"))
+ccf(z77$acions.dia ,z77$vlpg.dia, na.action = na.pass)
 
 # 4. ativos x pgtos
 # pegar dos arquivos, somente ligaçoes completadas
@@ -933,13 +1134,158 @@ df_tel.2015 <- bind_rows(list(df_tel.1.01.2015,
                               df_tel.1.11.2015,
                               df_tel.2.11.2015
                               ))
-# selecionar apenas as completadas
-df_tel.2015 <-
+
+rm(list = c("df_tel.1.01.2015",
+            "df_tel.2.01.2015",
+            "df_tel.3.01.2015",
+            "df_tel.1.02.2015",
+            "df_tel.2.02.2015",
+            "df_tel.1.03.2015",
+            "df_tel.2.03.2015",
+            "df_tel.3.03.2015",
+            "df_tel.1.04.2015",
+            "df_tel.2.04.2015",
+            "df_tel.3.04.2015",
+            "df_tel.4.04.2015",
+            "df_tel.5.04.2015",
+            "df_tel.1.05.2015",
+            "df_tel.2.05.2015",
+            "df_tel.3.05.2015",
+            "df_tel.4.05.2015",
+            "df_tel.1.06.2015",
+            "df_tel.2.06.2015",
+            "df_tel.3.06.2015",
+            "df_tel.4.06.2015",
+            "df_tel.1.07.2015",
+            "df_tel.2.07.2015",
+            "df_tel.3.07.2015",
+            "df_tel.4.07.2015",
+            "df_tel.5.07.2015",
+            "df_tel.1.08.2015",
+            "df_tel.2.08.2015",
+            "df_tel.1.09.2015",
+            "df_tel.2.09.2015",
+            "df_tel.1.10.2015",
+            "df_tel.2.10.2015",
+            "df_tel.1.11.2015",
+            "df_tel.2.11.2015"))
+
+# preparando formato correto de datas para plot
+df_tel.2015$Data <- as.Date(df_tel.2015$Data, "%d/%m/%Y")
+# transformando em PosixCt e truncando para tirar a hora
+#df_sms.2015$Enviado.em <- as.POSIXct(df_sms.2015$Enviado.em)
+df_tel.2015$Data <- as.POSIXct(trunc.POSIXt(df_tel.2015$Data, units = "days"))
+
+# agrupando por dia total de chamadas
+df_tel.2015.tot <-
     df_tel.2015 %>%
-    filter(Status == "Completada")
+    group_by(Data) %>%
+    summarise(acions.dia = n())
 
-# falta: tratar as datas, criar o data frame sumarizado por dia e fazer o plot e a correlação
+# plotando time series de total de chamadas (muito brutos os dados!)
+pl_tel_tot <- ggplot(df_tel.2015.tot, aes(Data, acions.dia)) + geom_line() + geom_smooth() +
+    xlab("dia") + ylab("acionamentos") + ggtitle("Ligação Ativa Manual Total/Dia") +
+    xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION))) +
+    ylim(c(min(df_tel.2015.tot$acions.dia),max(df_tel.2015.tot$acions.dia)))
 
+
+# selecionar apenas as ativas manual mas completadas
+df_tel.2015.atv.m <-
+    df_tel.2015 %>%
+    filter(Tipo == "Ativa Manual" & Status == "Completada")
+# agrupando por dia total de chamadas ativas manuais
+df_tel.2015.atv.m <-
+    df_tel.2015.atv.m %>%
+    group_by(Data) %>%
+    summarise(acions.dia = n())
+
+# plotando time series de total de chamadas ativas manuais
+pl_tel_atva <- ggplot(df_tel.2015.atv.m, aes(Data, acions.dia)) + geom_line() + geom_smooth() +
+    xlab("dia") + ylab("acionamentos") + ggtitle("Ligação Ativa Automática/Dia") +
+    xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION))) +
+    ylim(c(min(df_tel.2015.atv.m$acions.dia),max(df_tel.2015.atv.m$acions.dia)))
+
+# selecionar apenas as ativas auto mas completadas
+df_tel.2015.atv.a <-
+    df_tel.2015 %>%
+    filter(Tipo == "Ativa AutomÃ¡tica" & (Status == "Completada (Chamador)"))
+ 
+# agrupando por dia total de chamadas ativas auto
+df_tel.2015.atv.a <-
+    df_tel.2015.atv.a %>%
+    group_by(Data) %>%
+    summarise(acions.dia = n())
+
+# plotando time series de total de chamadas 
+pl_tel_atvm <- ggplot(df_tel.2015.atv.a, aes(Data, acions.dia)) + geom_line() + geom_smooth() +
+    xlab("dia") + ylab("acionamentos") + ggtitle("Ligação Ativa Manual/Dia") +
+    xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION))) +
+    ylim(c(min(df_tel.2015.atv.a$acions.dia),max(df_tel.2015.atv.a$acions.dia)))
+
+# selecionar apenas as receptivas (considerando as transferências)
+df_tel.2015.rec <-
+    df_tel.2015 %>%
+    filter(Tipo == "Receptiva")
+#filter(Tipo == "Ativa AutomÃ¡tica" & (Status == "Completada (Agente)" | Status == "Completada (Chamador)"))
+# agrupando por dia total de chamadas ativas auto
+df_tel.2015.rec <-
+    df_tel.2015.rec %>%
+    group_by(Data) %>%
+    summarise(acions.dia = n())
+
+# plotando time series de total de chamadas 
+pl_tel_rec <- ggplot(df_tel.2015.rec, aes(Data, acions.dia)) + geom_line() + geom_smooth() +
+    xlab("dia") + ylab("acionamentos") + ggtitle("Ligação Receptiva/Dia") +
+    xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION))) +
+    ylim(c(min(df_tel.2015.rec$acions.dia),max(df_tel.2015.rec$acions.dia)))
+
+pushViewport(viewport(layout = grid.layout(4, 1)))
+print(pl_tel_atva, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+print(pl_tel_atvm, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
+print(pl_tel_rec, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
+print(pl_pg, vp = viewport(layout.pos.row = 4, layout.pos.col = 1))
+
+# correlações enre as time series acima
+
+# nro pgtos x ativas manuais
+my.corr.atvm <- df_tel.2015.atv.m
+my.corr.atvm$Data <- as.character(my.corr.atvm$Data)
+a2 <- full_join(my.corr.npg,my.corr.atvm, by=c("DTpgto" = "Data"))
+#a2 <- na.omit(a2)
+# correlação com nro de pgtos dia
+ccf(a2$acions.dia ,a2$pgto.dia, na.action = na.pass)
+# com primeiro pgto (qtde)
+a22 <- full_join(my.corr.prpg,my.corr.atvm, by=c("DTpgto" = "Data"))
+ccf(a22$acions.dia ,a22$pgto.dia, na.action = na.pass)
+
+# nro pgtos x ativas auto
+my.corr.atva <- df_tel.2015.atv.a
+my.corr.atva$Data <- as.character(my.corr.atva$Data)
+a3 <- full_join(my.corr.npg,my.corr.atva, by=c("DTpgto" = "Data"))
+a3 <- na.omit(a3)
+# correlação com nro de pgtos dia
+ccf(a3$acions.dia ,a3$pgto.dia)
+# com primeiro pgto (qtde)
+a33 <- full_join(my.corr.prpg,my.corr.atva, by=c("DTpgto" = "Data"))
+ccf(a33$acions.dia ,a33$pgto.dia, na.action = na.pass)
+# correlação fraca mas negativa (sugestão: não gastar com ativo automatico)
+
+# nro pgtos x receptivas
+my.corr.rec <- df_tel.2015.rec
+my.corr.rec$Data <- as.character(my.corr.rec$Data)
+a4 <- full_join(my.corr.npg,my.corr.rec, by=c("DTpgto" = "Data"))
+#a4 <- na.omit(a4)
+# correlação com nro de pgtos dia
+ccf(a4$acions.dia ,a4$pgto.dia, na.action = na.pass)
+# com primeiro pgto (qtde)
+a44 <- full_join(my.corr.prpg,my.corr.rec, by=c("DTpgto" = "Data"))
+ccf(a44$acions.dia ,a44$pgto.dia, na.action = na.pass)
+# interessante: correlação mais alta de todas e próximo de lag 0!!!!
+# confirma que existe correlação entre pgto e receptivo
+# conclusão: não perder receptivo:
+
+
+# FALTA: mesma análise de TS prim pgto x chat
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++
 #++++++++++++++++++++++++++++++++++++++++++++++++++
