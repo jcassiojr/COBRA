@@ -12,7 +12,7 @@ l_raw <- f_leRawCobra(valor_divida)
 # obtém dataframe
 df_acion <- l_raw[[1]]
 df_carteira <- l_raw[[2]]
-df_pg <- l_raw[[3]]
+#df_pg <- l_raw[[3]]
 
 # ACIONAMENTOS
 ##################
@@ -71,24 +71,52 @@ pl_ac <- ggplot(df_acion_dia, aes(DIA.ACION, acions.dia)) + geom_line() + geom_s
     xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION)))
 
 
-# PGTO
+# PGTO 
 ##############
+# obter dados de pgto totais (não somente Avon)
+################################################################
+# obs: campos de valor já vêem sem vírgula como separador de milhar
+# obs: cuidado para limpar colunas de totais do xlsx
+#df_pg <- read.xlsx2("./data/Dados Raw-pgtos agencia 4c.csv", sheetIndex = 1, header = TRUE)
+df_pg <- read.csv("./data/Dados Raw-pgtos agencia 4c.csv", sep = ",", header = TRUE, 
+                  stringsAsFactors = FALSE,na.strings = "NULL")
+df_pg <- na.omit(df_pg)
+# converting from chr to Date format
+df_pg$DTpgto <- as.Date(df_pg$DTpgto, "%m/%d/%y")
+# convertendo em POSIXct para funcionar no plot abaixo
+df_pg$DTpgto <- as.POSIXct(trunc.POSIXt(df_pg$DTpgto, units = "days"))
+# acertando a coluna data que no excel está numérica
+#df_pg <-
+#    df_pg %>%
+#    mutate(DTpgto = ymd(as.Date(as.numeric(paste(DTpgto)), origin="1899-12-30")) ) %>%
+#    rename(CONTRATO = CONTR_CON)
+# eliminando virgula de milhar para conversão abaixo não forçar NA neste casos
+df_pg <-
+    df_pg %>%
+    mutate (VlPag = as.numeric(gsub(",","", VlPag))) %>% # forçando Valor numeric
+    rename(CONTRATO = CONTR_CON)
+# NÃO FUNCIONA NO dplyr! x <- df_pg %>% mutate (Valor = as.numeric(as.charcter(Valor)))
+# tem que fazer passo a passo como abaixo
+#df_pg <- df_pg %>% mutate (VlPag = as.character(VlPag)) # para acerto do merge com cliav
+#df_pg <- df_pg %>% mutate (VlPag = as.numeric(VlPag)) # para acerto do merge com cliav
 
 # número de pgtos agrupando por dia 
 df_pg_dia <-
     df_pg %>%
     group_by(DTpgto) %>%
-    summarise(pgto.dia = n())
+    summarise(pgto.dia = n(),
+              vlpg.dia = sum(VlPag))
 
+# plot de nro pgtos dia
 pl_pg <- ggplot(df_pg_dia, aes(DTpgto, pgto.dia)) + geom_line() + geom_smooth() +
     xlab("dia") + ylab("pagamentos") + ggtitle("Número de Pagamentos/Dia") + 
     xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION)))
 
 # valor de pgtos agrupando por dia 
-df_vlpg_dia <-
-    df_pg %>%
-    group_by(DTpgto) %>%
-    summarise(vlpg.dia = sum(VlPag))
+#df_vlpg_dia <-
+#    df_pg %>%
+#    group_by(DTpgto) %>%
+#    summarise(vlpg.dia = sum(VlPag))
 
 pl_vlpg <- ggplot(df_vlpg_dia, aes(DTpgto, vlpg.dia)) + geom_line() + geom_smooth() +
     xlab("dia") + ylab("pagamentos") + ggtitle("Valor de Pagamentos/Dia") + 
@@ -939,7 +967,7 @@ pl_sms_nconf <- ggplot(df_sms.2015.nconf, aes(Enviado.em, acions.dia)) + geom_li
 
 # 1. Correlação sms enviado com confirmação x qtde de pgtos
 my.corr.npg <- df_pg_dia
-my.corr.vlpg <- df_pg_vl_dia
+my.corr.vlpg <- df_vlpg_dia
 my.corr.npg$DTpgto <- as.character(my.corr.npg$DTpgto)
 my.corr.vlpg$DTpgto <- as.character(my.corr.vlpg$DTpgto)
 # considerando apenas primeiro pgto
@@ -959,11 +987,29 @@ my.corr.sms.conf$Enviado.em <- as.character(my.corr.sms.conf$Enviado.em)
 # correlação com nro de pgtos dia
 z2 <- full_join(my.corr.npg,my.corr.sms.conf, by=c("DTpgto" = "Enviado.em"))
 #z2 <- na.omit(z2)
+# x sendo o preditor de y
+# lag negativo significa que x está -n dias atrás de Y, ou seja x leads y, x predict y
 ccf(z2$acions.dia ,z2$pgto.dia, na.action = na.pass)
+
+# There are a lot of models that we could try based on the CCF and lagged scatterplots for
+# these data. For demonstration purposes, we’ll first try a multiple regression in which yt,
+# the recruit variable, is a linear function of (past) lags 5, 6, 7, 8, 9, and 10 of the
+# SOI variable. That model works fairly well. Following is some R output. All coefficients 
+# are statistically significant and the R-squared is about 62%.
+# The residuals, however, have an AR(2) structure, as seen in the graph following the
+# regression output. We might try the method described in Lesson 8.1 to adjust for that, 
+# but we’ll take a different approach that we’ll describe after the output display.
+z2 <- na.omit(z2)
+ts1 <- ts(z2$acions.dia)
+ts2 <- ts(z2$pgto.dia)
+ccfvalues <- ccf(ts1, ts2)
+ccfvalues
+library("astsa")
+lag2.plot (ts1, ts2, 15)
 # correlação com nro de primeiros pgtos dia
 z22 <- full_join(my.corr.prpg,my.corr.sms.conf, by=c("DTpgto" = "Enviado.em"))
 #z22 <- na.omit(z22)
-ccf(z22$acions.dia ,z22$pgto.dia, na.action = na.pass)
+x <- ccf(z22$acions.dia ,z22$pgto.dia, na.action = na.pass)
 
 # 1. sms enviado com confirmação x valor de pgtos
 z3 <- full_join(my.corr.vlpg,my.corr.sms.conf, by=c("DTpgto" = "Enviado.em"))
@@ -1284,8 +1330,19 @@ ccf(a44$acions.dia ,a44$pgto.dia, na.action = na.pass)
 # confirma que existe correlação entre pgto e receptivo
 # conclusão: não perder receptivo:
 
+ts1 <- ts(z2$acions.dia)
+ts2 <- ts(z2$pgto.dia)
+ccfvalues <- ccf(ts1, ts2)
+ccfvalues
+library("astsa")
+lag2.plot (ts1, ts2, 15)
+
+
+# FALTA: obter percentual de abandonos
 
 # FALTA: mesma análise de TS prim pgto x chat
+# FALTA: considerar nos telefones tb a Duração > X e Espera???
+
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++
 #++++++++++++++++++++++++++++++++++++++++++++++++++
