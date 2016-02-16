@@ -1,5 +1,6 @@
 # análises exploratórias de time series
 #require("gridExtra")
+#require("astsa")
 require("ggplot2")
 require("dplyr")
 require("xlsx")
@@ -84,7 +85,7 @@ df_pg <- na.omit(df_pg)
 # converting from chr to Date format
 df_pg$DTpgto <- as.Date(df_pg$DTpgto, "%m/%d/%y")
 # convertendo em POSIXct para funcionar no plot abaixo
-df_pg$DTpgto <- as.POSIXct(trunc.POSIXt(df_pg$DTpgto, units = "days"))
+#df_pg$DTpgto <- as.POSIXct(trunc.POSIXt(df_pg$DTpgto, units = "days"))
 # acertando a coluna data que no excel está numérica
 #df_pg <-
 #    df_pg %>%
@@ -128,8 +129,17 @@ df_pg.primpg_dia <-
     group_by(DTpgto) %>%
     summarise(vlpg.dia = sum(VlPag),
               pgto.dia = n())
-
-
+#a <- df_pg.primpg_dia
+# completando os dias de gap com zero (necessário para correta cross correlation!!!!)
+# 1. criando data.frame com todas as datas
+dts_pg <- as.data.frame(seq(as.Date("2014-09-01"), as.Date("2016-2-12"), "days"))
+names(dts_pg) <- "DTpgto"
+df_pg.primpg_dia$DTpgto <- as.Date(df_pg.primpg_dia$DTpgto)
+df_pg.primpg_dia <- full_join(df_pg.primpg_dia,dts_pg, by = "DTpgto")
+df_pg.primpg_dia <-
+    df_pg.primpg_dia %>%
+    mutate(pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia),
+    vlpg.dia = ifelse(is.na(vlpg.dia), 0, vlpg.dia))
 #grid.arrange(pl_ac,pl_pg, nrow=2, ncol=1)
 # outra alternativa a grid
 #library(grid)
@@ -852,7 +862,7 @@ df_sms.2015 <-
 df_sms.2015$Enviado.em <- as.Date(df_sms.2015$Enviado.em, "%d/%m/%Y")
 # transformando em PosixCt e truncando para tirar a hora
 #df_sms.2015$Enviado.em <- as.POSIXct(df_sms.2015$Enviado.em)
-df_sms.2015$Enviado.em <- as.POSIXct(trunc.POSIXt(df_sms.2015$Enviado.em, units = "days"))
+#df_sms.2015$Enviado.em <- as.POSIXct(trunc.POSIXt(df_sms.2015$Enviado.em, units = "days"))
 # agrupando por dia 
 df_sms.2015.tot <-
     df_sms.2015 %>%
@@ -882,8 +892,14 @@ df_sms.2015.conf <-
     df_sms.2015.conf %>%
     group_by(Enviado.em) %>%
     summarise(acions.dia = n())
-
-
+# eliminando gaps
+dts_sms.conf <- as.data.frame(seq(as.Date("2015-04-08"), as.Date("2015-11-30"), "days"))
+names(dts_sms.conf) <- "Enviado.em"
+df_sms.2015.conf$Enviado.em <- as.Date(df_sms.2015.conf$Enviado.em)
+df_sms.2015.conf <- full_join(df_sms.2015.conf,dts_sms.conf, by = "Enviado.em")
+df_sms.2015.conf <-
+    df_sms.2015.conf %>%
+    mutate(acions.dia = ifelse(is.na(acions.dia), 0, acions.dia))
 
 # filtrando Não Confirmados
 ##############################
@@ -903,20 +919,14 @@ df_sms.2015.nconf <-
     group_by(Enviado.em) %>%
     summarise(acions.dia = n())
 
-
-
-
-# cria grid
-#pushViewport(viewport(layout = grid.layout(5, 1)))
-
-#print(pl_pg, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
-#print(pl_vlpg, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
-#print(pl_sms, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
-#print(pl_sms_nconf, vp = viewport(layout.pos.row = 4, layout.pos.col = 1))
-#print(pl_sms_tot, vp = viewport(layout.pos.row = 5, layout.pos.col = 1))
-
-
-
+# eliminando gaps
+dts_sms.nconf <- as.data.frame(seq(as.Date("2015-04-08"), as.Date("2015-11-30"), "days"))
+names(dts_sms.nconf) <- "Enviado.em"
+df_sms.2015.nconf$Enviado.em <- as.Date(df_sms.2015.nconf$Enviado.em)
+df_sms.2015.nconf <- full_join(df_sms.2015.nconf,dts_sms.nconf, by = "Enviado.em")
+df_sms.2015.nconf <-
+    df_sms.2015.nconf %>%
+    mutate(acions.dia = ifelse(is.na(acions.dia), 0, acions.dia))
 
 # TELEFONIA ATIVA E RECEPTIVA de 2015
 # janeiro
@@ -1075,15 +1085,21 @@ rm(list = c("df_tel.1.01.2015",
 df_tel.2015$Data <- as.Date(df_tel.2015$Data, "%d/%m/%Y")
 # transformando em PosixCt e truncando para tirar a hora
 #df_sms.2015$Enviado.em <- as.POSIXct(df_sms.2015$Enviado.em)
-df_tel.2015$Data <- as.POSIXct(trunc.POSIXt(df_tel.2015$Data, units = "days"))
+#df_tel.2015$Data <- as.POSIXct(trunc.POSIXt(df_tel.2015$Data, units = "days"))
 
 # agrupando por dia total de chamadas
 df_tel.2015.tot <-
     df_tel.2015 %>%
     group_by(Data) %>%
     summarise(acions.dia = n())
-
-
+# eliminando gaps
+dts_tel.tot <- as.data.frame(seq(as.Date("2015-01-02"), as.Date("2015-11-30"), "days"))
+names(dts_tel.tot) <- "Data"
+df_tel.2015.tot$Data <- as.Date(df_tel.2015.tot$Data)
+df_tel.2015.tot <- full_join(df_tel.2015.tot,dts_tel.tot, by = "Data")
+df_tel.2015.tot <-
+    df_tel.2015.tot %>%
+    mutate(acions.dia = ifelse(is.na(acions.dia), 0, acions.dia))
 
 # selecionar apenas as ativas manual mas completadas
 df_tel.2015.atv.m <-
@@ -1094,7 +1110,14 @@ df_tel.2015.atv.m <-
     df_tel.2015.atv.m %>%
     group_by(Data) %>%
     summarise(acions.dia = n())
-
+# eliminando gaps
+dts_tel.atvm <- as.data.frame(seq(as.Date("2015-01-02"), as.Date("2015-11-30"), "days"))
+names(dts_tel.atvm) <- "Data"
+df_tel.2015.atv.m$Data <- as.Date(df_tel.2015.atv.m$Data)
+df_tel.2015.atv.m <- full_join(df_tel.2015.atv.m,dts_tel.atvm, by = "Data")
+df_tel.2015.atv.m <-
+    df_tel.2015.atv.m %>%
+    mutate(acions.dia = ifelse(is.na(acions.dia), 0, acions.dia))
 
 # selecionar apenas as ativas auto mas completadas
 df_tel.2015.atv.a <-
@@ -1106,24 +1129,39 @@ df_tel.2015.atv.a <-
     df_tel.2015.atv.a %>%
     group_by(Data) %>%
     summarise(acions.dia = n())
+# eliminando gaps
+dts_tel.atva <- as.data.frame(seq(as.Date("2015-01-02"), as.Date("2015-11-30"), "days"))
+names(dts_tel.atva) <- "Data"
+df_tel.2015.atv.a$Data <- as.Date(df_tel.2015.atv.a$Data)
+df_tel.2015.atv.a <- full_join(df_tel.2015.atv.a,dts_tel.atva, by = "Data")
+df_tel.2015.atv.a <-
+    df_tel.2015.atv.a %>%
+    mutate(acions.dia = ifelse(is.na(acions.dia), 0, acions.dia))
 
 # selecionar apenas as receptivas (considerando as transferências)
 df_tel.2015.rec <-
     df_tel.2015 %>%
     filter(Tipo == "Receptiva" & (Status == "Completada (Agente)" | Status == "Completada (Chamador)"))
 
-# percentual de abandono nas receptivas
+# percentual de abandono nas receptivas 
 aband <-
     df_tel.2015 %>%
     filter(Tipo == "Receptiva")
 prop.table(table(aband$Status))
 
-# agrupando por dia total de chamadas ativas auto
+# agrupando por dia total de chamadas receptivas completadas
 df_tel.2015.rec <-
     df_tel.2015.rec %>%
     group_by(Data) %>%
     summarise(acions.dia = n())
-
+# eliminando gaps
+dts_tel.rec <- as.data.frame(seq(as.Date("2015-01-02"), as.Date("2015-11-30"), "days"))
+names(dts_tel.rec) <- "Data"
+df_tel.2015.rec$Data <- as.Date(df_tel.2015.rec$Data)
+df_tel.2015.rec <- full_join(df_tel.2015.rec,dts_tel.rec, by = "Data")
+df_tel.2015.rec <-
+    df_tel.2015.rec %>%
+    mutate(acions.dia = ifelse(is.na(acions.dia), 0, acions.dia))
 
 # PLOTS
 pl_prim_npg <- ggplot(df_pg.primpg_dia, aes(DTpgto, pgto.dia)) + geom_line() + geom_smooth() +
@@ -1177,7 +1215,7 @@ pl_tel_atva <- ggplot(df_tel.2015.atv.m, aes(Data, acions.dia)) + geom_line() + 
     ylim(c(min(df_tel.2015.atv.m$acions.dia),max(df_tel.2015.atv.m$acions.dia)))
 
 # plots combinados
-pushViewport(viewport(layout = grid.layout(3, 1)), title)
+pushViewport(viewport(layout = grid.layout(3, 1)))
 print(pl_tel_atvm, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
 print(pl_sms_conf, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
 print(pl_prim_npg, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
@@ -1256,7 +1294,8 @@ NPGxSMS_Conf <-
            pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia),
            vlpg.dia = ifelse(is.na(vlpg.dia), 0, vlpg.dia))
 #z22 <- na.omit(z22)
-ccf(NPGxSMS_Conf$acions.dia ,NPGxSMS_Conf$pgto.dia, na.action = na.pass)
+#par(mfrow=c(2,2))
+#ccf(NPGxSMS_Conf$acions.dia ,NPGxSMS_Conf$pgto.dia, na.action = na.pass, lag.max = 30)
 
 # teste de lag2.plot
 #NPGxSMS_Conf <- na.omit(NPGxSMS_Conf)
@@ -1279,7 +1318,7 @@ VPGxSMS_Conf <-
            pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia),
            vlpg.dia = ifelse(is.na(vlpg.dia), 0, vlpg.dia))
 
-ccf(VPGxSMS_Conf$acions.dia ,VPGxSMS_Conf$vlpg.dia, na.action = na.pass)
+#ccf(VPGxSMS_Conf$acions.dia ,VPGxSMS_Conf$vlpg.dia, na.action = na.pass, lag.max = 30)
 
 # 2. sms enviado SEM confirmação x qtde de pgtos
 ################################################
@@ -1297,7 +1336,7 @@ NPGxSMS_NConf <-
            pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia),
            vlpg.dia = ifelse(is.na(vlpg.dia), 0, vlpg.dia))
 
-ccf(NPGxSMS_NConf$acions.dia ,NPGxSMS_NConf$pgto.dia, na.action = na.pass)
+#ccf(NPGxSMS_NConf$acions.dia ,NPGxSMS_NConf$pgto.dia, na.action = na.pass, lag.max = 30)
 
 
 # 2. sms enviado SEM confirmação x valor de pgtos
@@ -1313,7 +1352,7 @@ VPGxSMS_NConf <-
            pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia),
            vlpg.dia = ifelse(is.na(vlpg.dia), 0, vlpg.dia))
 
-ccf(VPGxSMS_NConf$acions.dia ,VPGxSMS_NConf$vlpg.dia, na.action = na.pass)
+#ccf(VPGxSMS_NConf$acions.dia ,VPGxSMS_NConf$vlpg.dia, na.action = na.pass, lag.max = 30)
 
 # 3. sms totais enviados
 my.corr.sms.tot <- df_sms.2015.tot
@@ -1330,7 +1369,7 @@ NPGxSMS_TOT <-
            pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia),
            vlpg.dia = ifelse(is.na(vlpg.dia), 0, vlpg.dia))
 
-ccf(NPGxSMS_TOT$acions.dia ,NPGxSMS_TOT$pgto.dia, na.action = na.pass)
+#ccf(NPGxSMS_TOT$acions.dia ,NPGxSMS_TOT$pgto.dia, na.action = na.pass, lag.max = 30)
 
 # 2. sms enviado SEM confirmação x valor de pgtos
 #z7 <- full_join(my.corr.vlpg,my.corr.sms.tot, by=c("DTpgto" = "Enviado.em"))
@@ -1344,7 +1383,7 @@ VPGxSMS_TOT <-
            pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia),
            vlpg.dia = ifelse(is.na(vlpg.dia), 0, vlpg.dia))
 
-ccf(NPGxSMS_TOT$acions.dia ,NPGxSMS_TOT$vlpg.dia, na.action = na.pass)
+#ccf(VPGxSMS_TOT$acions.dia ,VPGxSMS_TOT$vlpg.dia, na.action = na.pass, lag.max = 30)
 
 # 4. ativos x pgtos
 # pegar dos arquivos, somente ligaçoes completadas
@@ -1364,7 +1403,16 @@ NPGxATV_MAN <-
            pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia),
            vlpg.dia = ifelse(is.na(vlpg.dia), 0, vlpg.dia))
 
-ccf(NPGxATV_MAN$acions.dia ,NPGxATV_MAN$pgto.dia, na.action = na.pass)
+#ccf(NPGxATV_MAN$acions.dia ,NPGxATV_MAN$pgto.dia, na.action = na.pass, lag.max = 30)
+
+#ts1 <- ts(NPGxATV_MAN$acions.dia)
+#ts2 <- ts(NPGxATV_MAN$pgto.dia)
+
+#ccfvalues <- ccf(ts1, ts2)
+#ccfvalues
+# obs: em caso de erro, detach package astsa e install again
+#library("astsa")
+#lag2.plot (ts1, ts2, 15)
 
 # nro pgtos x ativas auto
 my.corr.atva <- df_tel.2015.atv.a
@@ -1381,12 +1429,15 @@ NPGxATV_AUT <-
            pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia),
            vlpg.dia = ifelse(is.na(vlpg.dia), 0, vlpg.dia))
 
-ccf(PGxATV_AUT$acions.dia ,PGxATV_AUT$pgto.dia, na.action = na.pass)
+#ccf(PGxATV_AUT$acions.dia ,PGxATV_AUT$pgto.dia, na.action = na.pass, lag.max = 30)
 # correlação fraca mas negativa (sugestão: não gastar com ativo automatico)
 
 # nro pgtos x receptivas
 my.corr.rec <- df_tel.2015.rec
 my.corr.rec$Data <- as.character(my.corr.rec$Data)
+
+# CONFIRMADO: CORRELAÇÃO Aumentou de .3 para .5!!!!!
+#+++++++++++++
 #a4 <- full_join(my.corr.npg,my.corr.rec, by=c("DTpgto" = "Data"))
 #a4 <- na.omit(a4)
 # correlação com nro de pgtos dia
@@ -1400,7 +1451,7 @@ NPGxREC <-
            pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia),
            vlpg.dia = ifelse(is.na(vlpg.dia), 0, vlpg.dia))
 
-ccf(NPGxREC$acions.dia ,NPGxREC$pgto.dia, na.action = na.pass)
+#ccf(NPGxREC$acions.dia ,NPGxREC$pgto.dia, na.action = na.pass, lag.max = 30)
 # interessante: correlação mais alta de todas e próximo de lag 0!!!!
 # confirma que existe correlação entre pgto e receptivo
 # conclusão: não perder receptivo!!
@@ -1420,19 +1471,37 @@ NPGxSMS_FONE <-
            pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia),
            vlpg.dia = ifelse(is.na(vlpg.dia), 0, vlpg.dia))
 
-ccf(NPGxSMS_FONE$sms_fone ,NPGxSMS_FONE$pgto.dia, na.action = na.pass)
+#ccf(NPGxSMS_FONE$sms_fone ,NPGxSMS_FONE$pgto.dia, na.action = na.pass, lag.max = 30)
 
-ts1 <- ts(NPGxSMS_FONE$sms_fone)
-x <-
-    NPGxSMS_FONE %>%
-    mutate(pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia))
-ts2 <- ts(x$pgto.dia)
+# PLOTANDO AS CORRELAÇÕES
+par(mfrow=c(2,3))
+ccf(NPGxSMS_Conf$acions.dia ,NPGxSMS_Conf$pgto.dia, 
+    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS Confirmado")
+#ccf(VPGxSMS_Conf$acions.dia ,VPGxSMS_Conf$vlpg.dia, na.action = na.pass, lag.max = 30)
+ccf(NPGxSMS_NConf$acions.dia ,NPGxSMS_NConf$pgto.dia, 
+    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS NÃO Confirmado")
+#ccf(VPGxSMS_NConf$acions.dia ,VPGxSMS_NConf$vlpg.dia, na.action = na.pass, lag.max = 30)
+#ccf(NPGxSMS_TOT$acions.dia ,NPGxSMS_TOT$pgto.dia, 
+#    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS Total")
+#ccf(VPGxSMS_TOT$acions.dia ,VPGxSMS_TOT$vlpg.dia, na.action = na.pass, lag.max = 30)
+ccf(NPGxATV_MAN$acions.dia ,NPGxATV_MAN$pgto.dia, 
+    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "Ativo Manual")
+ccf(NPGxATV_AUT$acions.dia ,NPGxATV_AUT$pgto.dia, 
+    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "Ativo Automático")
+ccf(NPGxREC$acions.dia ,NPGxREC$pgto.dia, 
+    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "Receptivo Completado")
+#ccf(NPGxSMS_FONE$sms_fone ,NPGxSMS_FONE$pgto.dia, 
+#    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "Total SMS e Ativo Manual")
 
-ccfvalues <- ccf(ts1, ts2)
-ccfvalues
+
+#ts1 <- ts(NPGxSMS_FONE$sms_fone)
+#ts2 <- ts(x$pgto.dia)
+
+#ccfvalues <- ccf(ts1, ts2)
+#ccfvalues
 # obs: em caso de erro, detach package astsa e install again
-library("astsa")
-lag2.plot (ts1, ts2, 15)
+#library("astsa")
+#lag2.plot (ts1, ts2, 15)
 
 
 
@@ -1451,8 +1520,8 @@ lag2.plot (ts1, ts2, 15)
 
 
 # USANDO PACOTE TS
-ts_acion_dia <- ts(df_sms.2015.tot$acions.dia , frequency=365, start=c(2014,365))
-plot(ts_acion_dia)
+#ts_acion_dia <- ts(df_sms.2015.tot$acions.dia , frequency=365, start=c(2014,365))
+#plot(ts_acion_dia)
 
 # decompose time series
 #f <- decompose(ts_acion_dia)
