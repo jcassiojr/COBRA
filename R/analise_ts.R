@@ -7,71 +7,10 @@ require("xlsx")
 require("lubridate")
 require("grid")
 
-#source("~/Documents/MyGit/COBRA/R/f_leRawCobra.R")
-#valor_divida = 1.0
-#l_raw <- f_leRawCobra(valor_divida)
-# obtém dataframe
-#df_acion <- l_raw[[1]] # uando orquivos passados pelo Rafael
-#df_carteira <- l_raw[[2]]
-#df_pg <- l_raw[[3]] # usando pgtos de todas as carteiras abaixo
-
-# ACIONAMENTOS
-##################
-# filtrando por Ativo
-#df_acion.atv <-
-#    df_acion %>%
-#    filter(grepl("Ativo",TIPO.ACION))
-# eliminando NAs
-#df_acion.atv <- na.omit(df_acion.atv)
-
-# filtrando por Receptivo
-#df_acion.rec <-
-#    df_acion %>%
-#    filter(grepl("Receptivo",TIPO.ACION))
-# eliminando NAs
-#df_acion.rec <- na.omit(df_acion.rec)
-
-# filtrando por SMS
-#df_acion.sms <-
-#    df_acion %>%
-#    filter(grepl("Envio de Sms",OCORRENCIA))
-# eliminando NAs
-#df_acion.sms <- na.omit(df_acion.sms)
-
-# filtrando por Ativo, Receptivo
-#df_acion.fone <-
-#    df_acion %>%
-#    filter(grepl("Ativo|Receptivo",TIPO.ACION))
-# eliminando NAs
-#df_acion.fone <- na.omit(df_acion.fone)
-
-# somando os Ativo, c, SMS
-#df_acion.sms_fone <-
-#    df_acion %>%
-#    filter(grepl("Ativo|Receptivo",TIPO.ACION) |
-#               grepl("Envio de Sms",OCORRENCIA))
-# eliminando NAs
-#df_acion.sms_fone <- na.omit(df_acion.sms_fone)
-
-# ACIONAMENTOS DE SMS E FONE
-##################
-
-#  obs: tem que converter para POSIXct para funcionar com dplyr!!!!
-#df_acion.sms_fone$DIA.ACION <- as.POSIXct(trunc.POSIXt(df_acion.sms_fone$DATA.ACION, units = "days"))
-# agrupando por dia 
-#df_acion_dia <-
-#    df_acion.sms_fone %>%
-#    group_by(DIA.ACION) %>%
-#    summarise(acions.dia = n())
-# eliminando NAs
-#df_acion_dia <- na.omit(df_acion_dia)
-
-# ggplot 
-#pl_ac <- ggplot(df_acion_dia, aes(DIA.ACION, acions.dia)) + geom_line() + geom_smooth() +
-#    xlab("dia") + ylab("acionamentos") + ggtitle("Acionamentos (SMS e Fone)/Dia") +
-#    xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION)))
-
-
+source("~/Documents/MyGit/COBRA/R/f_le_chat.R")
+source("~/Documents/MyGit/COBRA/R/f_le_sms.R")
+source("~/Documents/MyGit/COBRA/R/f_le_fone.R")
+source("~/Documents/MyGit/COBRA/R/f_le_xml.R")
 # PGTO 
 ##############
 # obter dados de pgto totais (não somente Avon)
@@ -231,624 +170,14 @@ df_pg.primpg_dia <-
 # 1. obter a quantidade de SMS enviados, agrupados por: com ou sem confirmação
 # 2. obter o dia do envio para comparar com time serie de pgtos
 
-# SMS de 04 2015
-df_sms.04.08 <- read.csv2("./data/SMS/04 - Abril/08-04.csv", encoding="latin1",
-                    stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.04.13 <- read.csv2("./data/SMS/04 - Abril/13-04.csv", encoding="latin1",
-                             stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.04.15 <- read.csv2("./data/SMS/04 - Abril/15-04.csv", encoding="latin1",
-                             stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.04.16 <- read.csv2("./data/SMS/04 - Abril/16-04.csv", encoding="latin1",
-                             stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.04.17 <- read.csv2("./data/SMS/04 - Abril/17-04.csv", encoding="latin1",
-                             stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.04.22 <- read.csv2("./data/SMS/04 - Abril/22-04.csv", encoding="latin1",
-                             stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.04.23 <- read.csv2("./data/SMS/04 - Abril/23-04.csv", encoding="latin1",
-                             stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.04.27 <- read.csv2("./data/SMS/04 - Abril/27-04.csv", encoding="latin1",
-                             stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.04.28 <- read.csv2("./data/SMS/04 - Abril/28-04.csv", encoding="latin1",
-                             stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-
-# agrupando por dia
-df_sms.04.2015 <- bind_rows(list(df_sms.04.08,df_sms.04.13,df_sms.04.15,df_sms.04.16,
-                                df_sms.04.17,df_sms.04.22,df_sms.04.23,df_sms.04.27,df_sms.04.28))
-rm(list = c("df_sms.04.08","df_sms.04.13","df_sms.04.15","df_sms.04.16",
-            "df_sms.04.17","df_sms.04.22","df_sms.04.23","df_sms.04.27","df_sms.04.28"))
-# SMS de 05 2015
-df_sms.05.04 <- read.csv2("./data/SMS/05 - Maio/04-05.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.05.05 <- read.csv2("./data/SMS/05 - Maio/05-05.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.05.07 <- read.csv2("./data/SMS/05 - Maio/07-05.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.05.12 <- read.csv2("./data/SMS/05 - Maio/12-05.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.05.14 <- read.csv2("./data/SMS/05 - Maio/14-05.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.05.19 <- read.csv2("./data/SMS/05 - Maio/19-05.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.05.22 <- read.csv2("./data/SMS/05 - Maio/22-05.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.05.26 <- read.csv2("./data/SMS/05 - Maio/26-05.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.05.27 <- read.csv2("./data/SMS/05 - Maio/27-05.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-
-# agrupando por dia
-df_sms.05.2015 <- bind_rows(list(df_sms.05.04,df_sms.05.05,df_sms.05.07,df_sms.05.12,
-                                 df_sms.05.14,df_sms.05.19,df_sms.05.22,df_sms.05.26,df_sms.05.27))
-rm(list = c("df_sms.05.04","df_sms.05.05","df_sms.05.07","df_sms.05.12",
-            "df_sms.05.14","df_sms.05.19","df_sms.05.22","df_sms.05.26","df_sms.05.27"))
-
-# SMS de 06 2015
-df_sms.06.01 <- read.csv2("./data/SMS/06 - Junho/01-06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.06.02 <- read.csv2("./data/SMS/06 - Junho/02-06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.06.05 <- read.csv2("./data/SMS/06 - Junho/05-06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.06.08 <- read.csv2("./data/SMS/06 - Junho/08-06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.06.09 <- read.csv2("./data/SMS/06 - Junho/09-06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.06.10 <- read.csv2("./data/SMS/06 - Junho/10-06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.06.11 <- read.csv2("./data/SMS/06 - Junho/11-06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.06.12 <- read.csv2("./data/SMS/06 - Junho/12-06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.06.15 <- read.csv2("./data/SMS/06 - Junho/15-06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.06.16 <- read.csv2("./data/SMS/06 - Junho/16-06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.06.17 <- read.csv2("./data/SMS/06 - Junho/17-06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.06.19 <- read.csv2("./data/SMS/06 - Junho/19-06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.06.23 <- read.csv2("./data/SMS/06 - Junho/23-06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.06.24 <- read.csv2("./data/SMS/06 - Junho/24-06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.06.25 <- read.csv2("./data/SMS/06 - Junho/25-06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-
-# agrupando por dia
-df_sms.06.2015 <- bind_rows(list(df_sms.06.01,
-                                 df_sms.06.02,
-                                 df_sms.06.05,
-                                 df_sms.06.08,
-                                 df_sms.06.09,
-                                 df_sms.06.10,
-                                 df_sms.06.11, 
-                                 df_sms.06.12, 
-                                 df_sms.06.15, 
-                                 df_sms.06.16, 
-                                 df_sms.06.17,
-                                 df_sms.06.19,
-                                 df_sms.06.23,
-                                 df_sms.06.24,
-                                 df_sms.06.25
-))
-rm(list = c("df_sms.06.01",
-            "df_sms.06.02",
-            "df_sms.06.05",
-            "df_sms.06.08",
-            "df_sms.06.09",
-            "df_sms.06.10",
-            "df_sms.06.11", 
-            "df_sms.06.12", 
-            "df_sms.06.15", 
-            "df_sms.06.16", 
-            "df_sms.06.17",
-            "df_sms.06.19",
-            "df_sms.06.23",
-            "df_sms.06.24",
-            "df_sms.06.25"))
-
-# SMS de 07 2015
-df_sms.07.01 <- read.csv2("./data/SMS/07 - Julho/01-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.02 <- read.csv2("./data/SMS/07 - Julho/02-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.03 <- read.csv2("./data/SMS/07 - Julho/03-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.04 <- read.csv2("./data/SMS/07 - Julho/04-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.06 <- read.csv2("./data/SMS/07 - Julho/06-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.07 <- read.csv2("./data/SMS/07 - Julho/07-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.08 <- read.csv2("./data/SMS/07 - Julho/08-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.09 <- read.csv2("./data/SMS/07 - Julho/09-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.10 <- read.csv2("./data/SMS/07 - Julho/10-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.11 <- read.csv2("./data/SMS/07 - Julho/11-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.13 <- read.csv2("./data/SMS/07 - Julho/13-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.14 <- read.csv2("./data/SMS/07 - Julho/14-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.15 <- read.csv2("./data/SMS/07 - Julho/15-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.16 <- read.csv2("./data/SMS/07 - Julho/16-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.17 <- read.csv2("./data/SMS/07 - Julho/17-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.18 <- read.csv2("./data/SMS/07 - Julho/18-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.20 <- read.csv2("./data/SMS/07 - Julho/20-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.21 <- read.csv2("./data/SMS/07 - Julho/21-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.22 <- read.csv2("./data/SMS/07 - Julho/22-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.23 <- read.csv2("./data/SMS/07 - Julho/23-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.24 <- read.csv2("./data/SMS/07 - Julho/24-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.25 <- read.csv2("./data/SMS/07 - Julho/25-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.27 <- read.csv2("./data/SMS/07 - Julho/27-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.28 <- read.csv2("./data/SMS/07 - Julho/28-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.29 <- read.csv2("./data/SMS/07 - Julho/29-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.07.30 <- read.csv2("./data/SMS/07 - Julho/30-07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-
-
-# agrupando por dia
-df_sms.07.2015 <- bind_rows(list(df_sms.07.01,
-                                 df_sms.07.02,
-                                 df_sms.07.03,
-                                 df_sms.07.04,
-                                 df_sms.07.06,
-                                 df_sms.07.07,
-                                 df_sms.07.08,
-                                 df_sms.07.09,
-                                 df_sms.07.10,
-                                 df_sms.07.11,
-                                 df_sms.07.13, 
-                                 df_sms.07.14, 
-                                 df_sms.07.15, 
-                                 df_sms.07.16, 
-                                 df_sms.07.17,
-                                 df_sms.07.18,
-                                 df_sms.07.20,
-                                 df_sms.07.21,
-                                 df_sms.07.22,
-                                 df_sms.07.23,
-                                 df_sms.07.24,
-                                 df_sms.07.25,
-                                 df_sms.07.27,
-                                 df_sms.07.28,
-                                 df_sms.07.29,
-                                 df_sms.07.30
-                                 ))
-rm(list = c("df_sms.07.01",
-            "df_sms.07.02",
-            "df_sms.07.03",
-            "df_sms.07.04",
-            "df_sms.07.06",
-            "df_sms.07.07",
-            "df_sms.07.08",
-            "df_sms.07.09",
-            "df_sms.07.10",
-            "df_sms.07.11",
-            "df_sms.07.13", 
-            "df_sms.07.14", 
-            "df_sms.07.15", 
-            "df_sms.07.16", 
-            "df_sms.07.17",
-            "df_sms.07.18",
-            "df_sms.07.20",
-            "df_sms.07.21",
-            "df_sms.07.22",
-            "df_sms.07.23",
-            "df_sms.07.24",
-            "df_sms.07.25",
-            "df_sms.07.27",
-            "df_sms.07.28",
-            "df_sms.07.29",
-            "df_sms.07.30"))
-
-# SMS de 08 2015
-df_sms.08.04 <- read.csv2("./data/SMS/08 - Agosto/04-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.05 <- read.csv2("./data/SMS/08 - Agosto/05-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.06 <- read.csv2("./data/SMS/08 - Agosto/06-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.07 <- read.csv2("./data/SMS/08 - Agosto/07-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.10 <- read.csv2("./data/SMS/08 - Agosto/10-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.11 <- read.csv2("./data/SMS/08 - Agosto/11-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.12 <- read.csv2("./data/SMS/08 - Agosto/12-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.13 <- read.csv2("./data/SMS/08 - Agosto/13-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.14 <- read.csv2("./data/SMS/08 - Agosto/14-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.15 <- read.csv2("./data/SMS/08 - Agosto/15-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.17 <- read.csv2("./data/SMS/08 - Agosto/17-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.18 <- read.csv2("./data/SMS/08 - Agosto/18-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.19 <- read.csv2("./data/SMS/08 - Agosto/19-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.20 <- read.csv2("./data/SMS/08 - Agosto/20-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.21 <- read.csv2("./data/SMS/08 - Agosto/21-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.24 <- read.csv2("./data/SMS/08 - Agosto/24-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.25 <- read.csv2("./data/SMS/08 - Agosto/25-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.26 <- read.csv2("./data/SMS/08 - Agosto/26-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.27 <- read.csv2("./data/SMS/08 - Agosto/27-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.28 <- read.csv2("./data/SMS/08 - Agosto/28-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.29 <- read.csv2("./data/SMS/08 - Agosto/29-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.30 <- read.csv2("./data/SMS/08 - Agosto/30-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.08.31 <- read.csv2("./data/SMS/08 - Agosto/31-08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-
-# agrupando por dia
-df_sms.08.2015 <- bind_rows(list(df_sms.08.04,
-                                 df_sms.08.05,
-                                 df_sms.08.06,
-                                 df_sms.08.07,
-                                 df_sms.08.10,
-                                 df_sms.08.11,
-                                 df_sms.08.12,
-                                 df_sms.08.13,
-                                 df_sms.08.14,
-                                 df_sms.08.15, 
-                                 df_sms.08.17, 
-                                 df_sms.08.18, 
-                                 df_sms.08.19, 
-                                 df_sms.08.20,
-                                 df_sms.08.21,
-                                 df_sms.08.24,
-                                 df_sms.08.25,
-                                 df_sms.08.26,
-                                 df_sms.08.27,
-                                 df_sms.08.28,
-                                 df_sms.08.29,
-                                 df_sms.08.30,
-                                 df_sms.08.31
-))
-
-rm(list = c("df_sms.08.04",
-            "df_sms.08.05",
-            "df_sms.08.06",
-            "df_sms.08.07",
-            "df_sms.08.10",
-            "df_sms.08.11",
-            "df_sms.08.12",
-            "df_sms.08.13",
-            "df_sms.08.14",
-            "df_sms.08.15", 
-            "df_sms.08.17", 
-            "df_sms.08.18", 
-            "df_sms.08.19", 
-            "df_sms.08.20",
-            "df_sms.08.21",
-            "df_sms.08.24",
-            "df_sms.08.25",
-            "df_sms.08.26",
-            "df_sms.08.27",
-            "df_sms.08.28",
-            "df_sms.08.29",
-            "df_sms.08.30",
-            "df_sms.08.31"))
-
-# SMS de 09 2015
-df_sms.09.01 <- read.csv2("./data/SMS/09 - Setembro/01-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.02 <- read.csv2("./data/SMS/09 - Setembro/02-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.03 <- read.csv2("./data/SMS/09 - Setembro/03-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.04 <- read.csv2("./data/SMS/09 - Setembro/04-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.08 <- read.csv2("./data/SMS/09 - Setembro/08-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.09 <- read.csv2("./data/SMS/09 - Setembro/09-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.10 <- read.csv2("./data/SMS/09 - Setembro/10-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.11 <- read.csv2("./data/SMS/09 - Setembro/11-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.12 <- read.csv2("./data/SMS/09 - Setembro/12-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.14 <- read.csv2("./data/SMS/09 - Setembro/14-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.15 <- read.csv2("./data/SMS/09 - Setembro/15-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.16 <- read.csv2("./data/SMS/09 - Setembro/16-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.17 <- read.csv2("./data/SMS/09 - Setembro/17-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.18 <- read.csv2("./data/SMS/09 - Setembro/18-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.19 <- read.csv2("./data/SMS/09 - Setembro/19-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.21 <- read.csv2("./data/SMS/09 - Setembro/21-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.22 <- read.csv2("./data/SMS/09 - Setembro/22-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.23 <- read.csv2("./data/SMS/09 - Setembro/23-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.24 <- read.csv2("./data/SMS/09 - Setembro/24-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.25 <- read.csv2("./data/SMS/09 - Setembro/25-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.26 <- read.csv2("./data/SMS/09 - Setembro/26-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.28 <- read.csv2("./data/SMS/09 - Setembro/28-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.29 <- read.csv2("./data/SMS/09 - Setembro/29-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.09.30 <- read.csv2("./data/SMS/09 - Setembro/30-09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-
-# agrupando por dia
-df_sms.09.2015 <- bind_rows(list(df_sms.09.01,
-                                 df_sms.09.02,
-                                 df_sms.09.03,
-                                 df_sms.09.04,
-                                 df_sms.09.08,
-                                 df_sms.09.09,
-                                 df_sms.09.10,
-                                 df_sms.09.11,
-                                 df_sms.09.12,
-                                 df_sms.09.14,
-                                 df_sms.09.15, 
-                                 df_sms.09.16, 
-                                 df_sms.09.17, 
-                                 df_sms.09.18, 
-                                 df_sms.09.19,
-                                 df_sms.09.21,
-                                 df_sms.09.22,
-                                 df_sms.09.23,
-                                 df_sms.09.24,
-                                 df_sms.09.25,
-                                 df_sms.09.26,
-                                 df_sms.09.28,
-                                 df_sms.09.29,
-                                 df_sms.09.30
-))
-
-rm(list = c("df_sms.09.01",
-            "df_sms.09.02",
-            "df_sms.09.03",
-            "df_sms.09.04",
-            "df_sms.09.08",
-            "df_sms.09.09",
-            "df_sms.09.10",
-            "df_sms.09.11",
-            "df_sms.09.12",
-            "df_sms.09.14",
-            "df_sms.09.15", 
-            "df_sms.09.16", 
-            "df_sms.09.17", 
-            "df_sms.09.18", 
-            "df_sms.09.19",
-            "df_sms.09.21",
-            "df_sms.09.22",
-            "df_sms.09.23",
-            "df_sms.09.24",
-            "df_sms.09.25",
-            "df_sms.09.26",
-            "df_sms.09.28",
-            "df_sms.09.29",
-            "df_sms.09.30"))
-
-# SMS de 10 2015
-df_sms.10.01 <- read.csv2("./data/SMS/10 - Outubro/01.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.02 <- read.csv2("./data/SMS/10 - Outubro/02.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.03 <- read.csv2("./data/SMS/10 - Outubro/03.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.05 <- read.csv2("./data/SMS/10 - Outubro/05.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.06 <- read.csv2("./data/SMS/10 - Outubro/06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.07 <- read.csv2("./data/SMS/10 - Outubro/07.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.08 <- read.csv2("./data/SMS/10 - Outubro/08.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.09 <- read.csv2("./data/SMS/10 - Outubro/09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.13 <- read.csv2("./data/SMS/10 - Outubro/13.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.14 <- read.csv2("./data/SMS/10 - Outubro/14.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.15 <- read.csv2("./data/SMS/10 - Outubro/15.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.16 <- read.csv2("./data/SMS/10 - Outubro/16.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.19 <- read.csv2("./data/SMS/10 - Outubro/19.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.23 <- read.csv2("./data/SMS/10 - Outubro/23.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.26 <- read.csv2("./data/SMS/10 - Outubro/26.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.28 <- read.csv2("./data/SMS/10 - Outubro/28.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.29 <- read.csv2("./data/SMS/10 - Outubro/29.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.10.30 <- read.csv2("./data/SMS/10 - Outubro/30.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-
-# agrupando por dia
-df_sms.10.2015 <- bind_rows(list(df_sms.10.01,
-                                 df_sms.10.02,
-                                 df_sms.10.03,
-                                 df_sms.10.05,
-                                 df_sms.10.06,
-                                 df_sms.10.07,
-                                 df_sms.10.08,
-                                 df_sms.10.09,
-                                 df_sms.10.13,
-                                 df_sms.10.14, 
-                                 df_sms.10.15, 
-                                 df_sms.10.16, 
-                                 df_sms.10.19, 
-                                 df_sms.10.23,
-                                 df_sms.10.26,
-                                 df_sms.10.28,
-                                 df_sms.10.29,
-                                 df_sms.10.30
-))
-rm(list = c("df_sms.10.01",
-            "df_sms.10.02",
-            "df_sms.10.03",
-            "df_sms.10.05",
-            "df_sms.10.06",
-            "df_sms.10.07",
-            "df_sms.10.08",
-            "df_sms.10.09",
-            "df_sms.10.13",
-            "df_sms.10.14", 
-            "df_sms.10.15", 
-            "df_sms.10.16", 
-            "df_sms.10.19", 
-            "df_sms.10.23",
-            "df_sms.10.26",
-            "df_sms.10.28",
-            "df_sms.10.29",
-            "df_sms.10.30"))
-
-
-# SMS de 11 2015
-df_sms.11.03 <- read.csv2("./data/SMS/11 - Novembro/03.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.04 <- read.csv2("./data/SMS/11 - Novembro/04.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.05 <- read.csv2("./data/SMS/11 - Novembro/05.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.06 <- read.csv2("./data/SMS/11 - Novembro/06.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.09 <- read.csv2("./data/SMS/11 - Novembro/09.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.10 <- read.csv2("./data/SMS/11 - Novembro/10.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.11 <- read.csv2("./data/SMS/11 - Novembro/11.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.12 <- read.csv2("./data/SMS/11 - Novembro/12.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.13 <- read.csv2("./data/SMS/11 - Novembro/13.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.16 <- read.csv2("./data/SMS/11 - Novembro/16.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.17 <- read.csv2("./data/SMS/11 - Novembro/17.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.18 <- read.csv2("./data/SMS/11 - Novembro/18.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.19 <- read.csv2("./data/SMS/11 - Novembro/19.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.20 <- read.csv2("./data/SMS/11 - Novembro/20.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.22 <- read.csv2("./data/SMS/11 - Novembro/22.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.23 <- read.csv2("./data/SMS/11 - Novembro/23.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.24 <- read.csv2("./data/SMS/11 - Novembro/24.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.25 <- read.csv2("./data/SMS/11 - Novembro/25.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.26 <- read.csv2("./data/SMS/11 - Novembro/26.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.27 <- read.csv2("./data/SMS/11 - Novembro/27.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-df_sms.11.30 <- read.csv2("./data/SMS/11 - Novembro/30.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")
-
-# agrupando por dia
-df_sms.11.2015 <- bind_rows(list(df_sms.11.03,
-                                 df_sms.11.04,
-                                 df_sms.11.05,
-                                 df_sms.11.06,
-                                 df_sms.11.09,
-                                 df_sms.11.10,
-                                 df_sms.11.11,
-                                 df_sms.11.12,
-                                 df_sms.11.13,
-                                 df_sms.11.16, 
-                                 df_sms.11.17, 
-                                 df_sms.11.18, 
-                                 df_sms.11.19, 
-                                 df_sms.11.20,
-                                 df_sms.11.22,
-                                 df_sms.11.23,
-                                 df_sms.11.24,
-                                 df_sms.11.25,
-                                 df_sms.11.26,
-                                 df_sms.11.27,
-                                 df_sms.11.30
-))
-
-rm(list = c("df_sms.11.03",
-            "df_sms.11.04",
-            "df_sms.11.05",
-            "df_sms.11.06",
-            "df_sms.11.09",
-            "df_sms.11.10",
-            "df_sms.11.11",
-            "df_sms.11.12",
-            "df_sms.11.13",
-            "df_sms.11.16", 
-            "df_sms.11.17", 
-            "df_sms.11.18", 
-            "df_sms.11.19", 
-            "df_sms.11.20",
-            "df_sms.11.22",
-            "df_sms.11.23",
-            "df_sms.11.24",
-            "df_sms.11.25",
-            "df_sms.11.26",
-            "df_sms.11.27",
-            "df_sms.11.30"))
-
-# concatenando todos os meses
-df_sms.2015 <- bind_rows(list(df_sms.04.2015,
-                              df_sms.05.2015,
-                              df_sms.06.2015,
-                              df_sms.07.2015,
-                              df_sms.08.2015,
-                              df_sms.09.2015,
-                              df_sms.10.2015,
-                              df_sms.11.2015))
-
-rm(list = c("df_sms.04.2015",
-            "df_sms.05.2015",
-            "df_sms.06.2015",
-            "df_sms.07.2015",
-            "df_sms.08.2015",
-            "df_sms.09.2015",
-            "df_sms.10.2015",
-            "df_sms.11.2015"))
+# LE arquivos SMS
+df_sms.2015 <- f_le_sms()
 
 # agrupar totais por dia, totais pro dia sem confirmação, totais por dia com confirmação
 # estatísticas iniciais
 #table(df_sms.2015$Status)
 table(df_sms.2015$Status)
-prop.table(table(df_sms.2015$Status))
+prop.table(table(df_sms.2015$Status)) # confirmados: 34%, não confirmados: 40%, bloqueados: 4%, Não recebidos: 23%
 # eliminando não recebidos e bloqueados
 df_sms.2015 <-
     df_sms.2015 %>%
@@ -928,158 +257,8 @@ df_sms.2015.nconf <-
     df_sms.2015.nconf %>%
     mutate(acions.dia = ifelse(is.na(acions.dia), 0, acions.dia))
 
-# TELEFONIA ATIVA E RECEPTIVA de 2015
-# janeiro
-df_tel.1.01.2015 <- read.csv2("./data/TELEFONIA/01 - Janeiro/01-10.csv", encoding="latin1",
-                          stringsAsFactors = FALSE, header = TRUE, sep = ";")
-df_tel.2.01.2015 <- read.csv2("./data/TELEFONIA/01 - Janeiro/11-20.csv", encoding="latin1",
-                            stringsAsFactors = FALSE, header = TRUE, sep = ";")
-df_tel.3.01.2015 <- read.csv2("./data/TELEFONIA/01 - Janeiro/21-31.csv", encoding="latin1",
-                            stringsAsFactors = FALSE, header = TRUE, sep = ";")
-# fevereiro
-df_tel.1.02.2015 <- read.csv2("./data/TELEFONIA/02 - Fevereiro/01-20.csv", encoding="latin1",
-                               stringsAsFactors = FALSE, header = TRUE, sep = ";")
-df_tel.2.02.2015 <- read.csv2("./data/TELEFONIA/02 - Fevereiro/21-28.csv", encoding="latin1",
-                               stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-#março
-df_tel.1.03.2015 <- read.csv2("./data/TELEFONIA/03 - Março/01-20.csv", encoding="latin1",
-                               stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.2.03.2015 <- read.csv2("./data/TELEFONIA/03 - Março/21-27.csv", encoding="latin1",
-                               stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.3.03.2015 <- read.csv2("./data/TELEFONIA/03 - Março/28-31.csv", encoding="latin1",
-                               stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-# abril
-df_tel.1.04.2015 <- read.csv2("./data/TELEFONIA/04 - Abril/01-08.csv", encoding="latin1",
-                               stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.2.04.2015 <- read.csv2("./data/TELEFONIA/04 - Abril/09-14.csv", encoding="latin1",
-                               stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.3.04.2015 <- read.csv2("./data/TELEFONIA/04 - Abril/15-22.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.4.04.2015 <- read.csv2("./data/TELEFONIA/04 - Abril/23-29.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.5.04.2015 <- read.csv2("./data/TELEFONIA/04 - Abril/30.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-# maio
-df_tel.1.05.2015 <- read.csv2("./data/TELEFONIA/05 - Maio/01-07.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.2.05.2015 <- read.csv2("./data/TELEFONIA/05 - Maio/08-14.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.3.05.2015 <- read.csv2("./data/TELEFONIA/05 - Maio/15-22.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.4.05.2015 <- read.csv2("./data/TELEFONIA/05 - Maio/23-31.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-# junho
-df_tel.1.06.2015 <- read.csv2("./data/TELEFONIA/06 - Junho/01-10.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.2.06.2015 <- read.csv2("./data/TELEFONIA/06 - Junho/11-18.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.3.06.2015 <- read.csv2("./data/TELEFONIA/06 - Junho/19-24.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.4.06.2015 <- read.csv2("./data/TELEFONIA/06 - Junho/25-30.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-# julho
-df_tel.1.07.2015 <- read.csv2("./data/TELEFONIA/07 - Julho/01-06.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.2.07.2015 <- read.csv2("./data/TELEFONIA/07 - Julho/07-12.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.3.07.2015 <- read.csv2("./data/TELEFONIA/07 - Julho/13-19.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.4.07.2015 <- read.csv2("./data/TELEFONIA/07 - Julho/20-27.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.5.07.2015 <- read.csv2("./data/TELEFONIA/07 - Julho/28-31.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-# agosto
-df_tel.1.08.2015 <- read.csv2("./data/TELEFONIA/08 - Agosto/01-20.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.2.08.2015 <- read.csv2("./data/TELEFONIA/08 - Agosto/21-31.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-# setembro
-df_tel.1.09.2015 <- read.csv2("./data/TELEFONIA/09 - Setembro/01-20.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.2.09.2015 <- read.csv2("./data/TELEFONIA/09 - Setembro/21-30.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-# outubro
-df_tel.1.10.2015 <- read.csv2("./data/TELEFONIA/10 - Outubro/01-20.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.2.10.2015 <- read.csv2("./data/TELEFONIA/10 - Outubro/21-31.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-# novembro
-df_tel.1.11.2015 <- read.csv2("./data/TELEFONIA/11 - Novembro/01-20.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-df_tel.2.11.2015 <- read.csv2("./data/TELEFONIA/11 - Novembro/21-30.csv", encoding="latin1",
-                              stringsAsFactors = FALSE, header = TRUE,  sep = ";")
-
-# concatenando todos os meses
-df_tel.2015 <- bind_rows(list(df_tel.1.01.2015,
-                              df_tel.2.01.2015,
-                              df_tel.3.01.2015,
-                              df_tel.1.02.2015,
-                              df_tel.2.02.2015,
-                              df_tel.1.03.2015,
-                              df_tel.2.03.2015,
-                              df_tel.3.03.2015,
-                              df_tel.1.04.2015,
-                              df_tel.2.04.2015,
-                              df_tel.3.04.2015,
-                              df_tel.4.04.2015,
-                              df_tel.5.04.2015,
-                              df_tel.1.05.2015,
-                              df_tel.2.05.2015,
-                              df_tel.3.05.2015,
-                              df_tel.4.05.2015,
-                              df_tel.1.06.2015,
-                              df_tel.2.06.2015,
-                              df_tel.3.06.2015,
-                              df_tel.4.06.2015,
-                              df_tel.1.07.2015,
-                              df_tel.2.07.2015,
-                              df_tel.3.07.2015,
-                              df_tel.4.07.2015,
-                              df_tel.5.07.2015,
-                              df_tel.1.08.2015,
-                              df_tel.2.08.2015,
-                              df_tel.1.09.2015,
-                              df_tel.2.09.2015,
-                              df_tel.1.10.2015,
-                              df_tel.2.10.2015,
-                              df_tel.1.11.2015,
-                              df_tel.2.11.2015
-                              ))
-
-rm(list = c("df_tel.1.01.2015",
-            "df_tel.2.01.2015",
-            "df_tel.3.01.2015",
-            "df_tel.1.02.2015",
-            "df_tel.2.02.2015",
-            "df_tel.1.03.2015",
-            "df_tel.2.03.2015",
-            "df_tel.3.03.2015",
-            "df_tel.1.04.2015",
-            "df_tel.2.04.2015",
-            "df_tel.3.04.2015",
-            "df_tel.4.04.2015",
-            "df_tel.5.04.2015",
-            "df_tel.1.05.2015",
-            "df_tel.2.05.2015",
-            "df_tel.3.05.2015",
-            "df_tel.4.05.2015",
-            "df_tel.1.06.2015",
-            "df_tel.2.06.2015",
-            "df_tel.3.06.2015",
-            "df_tel.4.06.2015",
-            "df_tel.1.07.2015",
-            "df_tel.2.07.2015",
-            "df_tel.3.07.2015",
-            "df_tel.4.07.2015",
-            "df_tel.5.07.2015",
-            "df_tel.1.08.2015",
-            "df_tel.2.08.2015",
-            "df_tel.1.09.2015",
-            "df_tel.2.09.2015",
-            "df_tel.1.10.2015",
-            "df_tel.2.10.2015",
-            "df_tel.1.11.2015",
-            "df_tel.2.11.2015"))
+# le arquivos de telefonemasn ativo e receptivo 2015
+df_tel.2015 <- f_le_fone()
 
 # preparando formato correto de datas para plot
 df_tel.2015$Data <- as.Date(df_tel.2015$Data, "%d/%m/%Y")
@@ -1147,7 +326,7 @@ df_tel.2015.rec <-
 aband <-
     df_tel.2015 %>%
     filter(Tipo == "Receptiva")
-prop.table(table(aband$Status))
+prop.table(table(aband$Status)) # 7%
 
 # agrupando por dia total de chamadas receptivas completadas
 df_tel.2015.rec <-
@@ -1162,6 +341,9 @@ df_tel.2015.rec <- full_join(df_tel.2015.rec,dts_tel.rec, by = "Data")
 df_tel.2015.rec <-
     df_tel.2015.rec %>%
     mutate(acions.dia = ifelse(is.na(acions.dia), 0, acions.dia))
+
+# CHAMAR AQUI FUNCAO QUE CARREGA CHATS
+df_chat.2015 <- f_le_chat()
 
 # PLOTS
 pl_prim_npg <- ggplot(df_pg.primpg_dia, aes(DTpgto, pgto.dia)) + geom_line() + geom_smooth() +
@@ -1214,12 +396,19 @@ pl_tel_atva <- ggplot(df_tel.2015.atv.m, aes(Data, acions.dia)) + geom_line() + 
     xlim(c(min(df_pg.primpg_dia$DTpgto),max(df_pg.primpg_dia$DTpgto))) +
     ylim(c(min(df_tel.2015.atv.m$acions.dia),max(df_tel.2015.atv.m$acions.dia)))
 
+# plotando time series de total de chats realizados
+pl_chat <- ggplot(df_chat.2015, aes(Data, nchats)) + geom_line() + geom_smooth() +
+    xlab("dia") + ylab("acionamentos") + ggtitle("Chats/Dia") +
+    xlim(c(min(df_pg.primpg_dia$DTpgto),max(df_pg.primpg_dia$DTpgto))) +
+    ylim(c(min(df_chat.2015$nchats),max(df_chat.2015$nchats)))
+
 # plots combinados
-pushViewport(viewport(layout = grid.layout(3, 1)))
+pushViewport(viewport(layout = grid.layout(2, 1)))
 print(pl_tel_atvm, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
-print(pl_sms_conf, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
-print(pl_prim_npg, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
-#print(pl_prim_vlpg, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
+#print(pl_sms_conf, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
+#print(pl_chat, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
+print(pl_prim_npg, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
+#print(pl_prim_vlpg, vp = viewport(layout.pos.row = 5, layout.pos.col = 1))
 
 pushViewport(viewport(layout = grid.layout(4, 1)))
 print(pl_tel_atva, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
@@ -1473,6 +662,26 @@ NPGxSMS_FONE <-
 
 #ccf(NPGxSMS_FONE$sms_fone ,NPGxSMS_FONE$pgto.dia, na.action = na.pass, lag.max = 30)
 
+# correlacoes chat
+my.corr.chat <- df_chat.2015
+my.corr.chat$Data <- as.character(my.corr.chat$Data)
+
+# CONFIRMADO: CORRELAÇÃO Aumentou de .3 para .5!!!!!
+#+++++++++++++
+#a4 <- full_join(my.corr.npg,my.corr.rec, by=c("DTpgto" = "Data"))
+#a4 <- na.omit(a4)
+# correlação com nro de pgtos dia
+#ccf(a4$acions.dia ,a4$pgto.dia, na.action = na.pass)
+# com primeiro pgto (qtde)
+# OTIMO PLOT. 20% de corr. Deveria ser maior!!! TEntar somar SMS e FONE
+PGxCHAT <- full_join(my.corr.prpg,my.corr.chat, by=c("DTpgto" = "Data"))
+NPGxCHAT <-
+    PGxCHAT %>%
+    mutate(nchats = ifelse(is.na(nchats), 0, nchats),
+           pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia),
+           vlpg.dia = ifelse(is.na(vlpg.dia), 0, vlpg.dia))
+
+
 # PLOTANDO AS CORRELAÇÕES
 par(mfrow=c(2,3))
 ccf(NPGxSMS_Conf$acions.dia ,NPGxSMS_Conf$pgto.dia, 
@@ -1488,12 +697,26 @@ ccf(NPGxATV_MAN$acions.dia ,NPGxATV_MAN$pgto.dia,
     na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "Ativo Manual")
 ccf(NPGxATV_AUT$acions.dia ,NPGxATV_AUT$pgto.dia, 
     na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "Ativo Automático")
-ccf(NPGxREC$acions.dia ,NPGxREC$pgto.dia, 
+ccf(NPGxREC$ acions.dia ,NPGxREC$pgto.dia, 
     na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "Receptivo Completado")
+ccf(NPGxCHAT$nchats ,NPGxCHAT$pgto.dia, 
+    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "Chats Realizados")
 #ccf(NPGxSMS_FONE$sms_fone ,NPGxSMS_FONE$pgto.dia, 
 #    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "Total SMS e Ativo Manual")
 
-
+# TESTE: correlacionar chat com pgtos somente desde o inicio da time series de chat
+# considerar pagtos a partir de 01/06/2015
+# USAR!!!!!!!
+x <-
+    NPGxCHAT %>%
+    filter (DTpgto >= "2015-06-01")
+ccf(x$nchats ,x$pgto.dia, 
+    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "Chats Realizados")
+y <-
+    NPGxATV_MAN %>%
+    filter (DTpgto >= "2015-01-02")
+ccf(y$acions.dia ,y$pgto.dia, 
+    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "Ativos Manuais Realizados")
 #ts1 <- ts(NPGxSMS_FONE$sms_fone)
 #ts2 <- ts(x$pgto.dia)
 
