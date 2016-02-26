@@ -198,8 +198,6 @@ df_sms.2015.tot <-
     group_by(Enviado.em) %>%
     summarise(acions.dia = n())
 
-
-
 # separando não confirmados de confirmados
 
 # ACIONAMENTOS SMS
@@ -683,6 +681,8 @@ NPGxCHAT <-
 
 
 # PLOTANDO AS CORRELAÇÕES
+################################
+
 par(mfrow=c(2,3))
 ccf(NPGxSMS_Conf$acions.dia ,NPGxSMS_Conf$pgto.dia, 
     na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS Confirmado")
@@ -736,11 +736,85 @@ ccf(y$acions.dia ,y$pgto.dia,
 # FALTA: mesma análise de TS prim pgto x chat
 # FALTA: considerar nos telefones tb a Duração > X e Espera???
 
+# TESTE DE REGRESSÃO MULTIPLA
+# tentar regressão com formula: PGTO ~ lag1 + lag2 ...
+# ideia: 
+# 1. usar lag() para obter a timeserie de acionamentos para as lags maiores no plot
+# obs: lag -1 maior, significa que devo trazer 1 dia para traz a time serie de pgtos
+#      para concidir com dia.pgto, aplicando lag(acions.dia, 1)
+# 2. criar dataframe com estas series + pgto
+# 3. aplicar lm pgto ~ lag1 + lag2 ...
 
+# EXPLICAÇÃO
+# quando uso ccf() para obter os lags, a função recua a serie de nacions.dia dia a dia, mantendo pgto.dia fixo
+# os valores de lag negativos me mostram a correlação de nacions.dia leading pgto.dia pra cada dia.
+# ou seja, em quais intervalos de dias para trás de nacions.dia em relação a pgto.dia existe maior correlação
+# Por isso, obtenho os lags negativos com maiores correlações e, a partir deles, uso a função lag para
+# "atrasar no tempo" a time serie de pgto.dia para estes dias, para poder correlacionar depois com a serie de
+# nacions.dia usando lm(). Crio uma nova time serie de pgto.dia para cada lag com correlação boa e depois
+# aplico lm() para obter os resultados e avaliar o modelo!!
+# OBS: testar acima criando dados fakes para ver se meu raciocínio está ok.
+
+
+
+# NPG x SMS.CONF
+# no caso abaixo, as lags maiores foram -7, -8, -13, -19, -24 (PG x SMS CONF)
+lag.7 <- lag(NPGxSMS_Conf$pgto.dia,7)
+plot(lag.7, type = "l")
+lag.8 <- lag(NPGxSMS_Conf$pgto.dia,8)
+lag.13 <- lag(NPGxSMS_Conf$pgto.dia,13)
+lag.19 <- lag(NPGxSMS_Conf$pgto.dia,19)
+lag.24 <- lag(NPGxSMS_Conf$pgto.dia,24)
+
+# criando data.frame
+my.df <- data.frame(pgto.dia = NPGxSMS_Conf$pgto.dia,
+                    lag.7 = lag.7,
+                    lag.8 = lag.8,
+                    lag.13 = lag.13,
+                    lag.19 = lag.19,
+                    lag.24 = lag.24)
+# aplica a regressão múltipla
+regr.1 <- lm(pgto.dia ~ lag.7 + lag.8 + lag.13 + lag.19 + lag.24, my.df)
+summary(regr.1)
+
+# NPG x ATIVA MAN
+z <- ccf(NPGxATV_MAN$acions.dia ,NPGxATV_MAN$pgto.dia, 
+    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "Ativo Manual")
+my.df.lag <- data.frame(lag = z$lag, acf = z$acf)
+# examinando o df acima, as lags maiores foram -9, -10, -11 (PG x ATIV MAN)
+lag.9 <- lag(NPGxATV_MAN$pgto.dia,9)
+plot(lag.9, type = "l")
+lag.10 <- lag(NPGxATV_MAN$pgto.dia,10)
+lag.11 <- lag(NPGxATV_MAN$pgto.dia,11)
+
+# criando data.frame
+my.df.2 <- data.frame(pgto.dia = NPGxATV_MAN$pgto.dia,
+                    lag.9 = lag.9,
+                    lag.10 = lag.10,
+                    lag.11 = lag.11)
+# aplica a regressão múltipla
+regr.2 <- lm(pgto.dia ~ lag.9 + lag.10 + lag.11, my.df.2)
+summary(regr.2)
+
+
+# importante: checar se existe correlação nos resíduos (não deveria!)
+z <- ccf(regr.2$residuals ,regr.2$residuals, 
+         na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "Regressões")
 #++++++++++++++++++++++++++++++++++++++++++++++++++
 #++++++++++++++++++++++++++++++++++++++++++++++++++
 # ATE AQUI OK
+# TESTAR ABAIXO NO LUGAR DE USAR ccf() ou acf()!!!!
+OP <- par(mfrow=c(3,3)) 
+for(i in 1:9) { 
+    CT <- cor.test(x[i:(20+i)],y,alternative="less") 
+    PV <- CT$p.value 
+    cat("lag =",9-i,"p-value =",PV,"\n") 
+    COR <- sprintf("%1.3f",CT$estimate) 
+    plot(x[i:(20+i)],y,xlab="x",main=paste("lag =",9-i,"corr =",COR)) 
+} 
+par(OP) 
 
+HTH
 
 # USANDO PACOTE TS
 #ts_acion_dia <- ts(df_sms.2015.tot$acions.dia , frequency=365, start=c(2014,365))
@@ -755,6 +829,28 @@ ccf(y$acions.dia ,y$pgto.dia,
 
 
 #++++++++++++++++++++++
+# TUTORIAL ASSOCIADO AO PAPER 8.2 Cross Correlation Functions and Laged ...
+library(astsa)  
+soi= scan("soi.dat")
+rec = scan("recruit.dat")
+soi=ts (soi)
+rec = ts(rec)
+ccfvalues =ccf (soi, rec)
+ccfvalues
+lag2.plot (soi, rec, 10)
+alldata=ts.intersect(rec,reclag1=lag(rec,-1), reclag2=lag(rec,-2), soilag5 = lag(soi,-5),
+                     soilag6=lag(soi,-6), soilag7=lag(soi,-7), soilag8=lag(soi,-8), soilag9=lag(soi,-9),
+                     soilag10=lag(soi,-10))
+tryit = lm(rec~soilag5+soilag6+soilag7+soilag8+soilag9+soilag10, data = alldata)
+summary (tryit)
+acf2(residuals(tryit))
+tryit2 = lm(rec~reclag1+reclag2+soilag5+soilag6+soilag7+soilag8+soilag9+soilag10,
+            data = alldata)
+summary (tryit2)
+acf2(residuals(tryit2))
+tryit3 = lm(rec~reclag1+reclag2+ soilag5+soilag6, data = alldata)
+summary (tryit3)
+acf2(residuals(tryit3))
 
 
 
