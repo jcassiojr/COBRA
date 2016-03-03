@@ -15,6 +15,10 @@ source("~/Documents/MyGit/COBRA/R/f_le_xml.R")
 ##############
 # obter dados de pgto totais (não somente Avon)
 ################################################################
+
+getOption("scipen") # obtendo default para display de notação científica em R
+options(scipen=999) # removendo display de notação científica em R
+#options(scipen=0) # restaurando opção default
 # obs: campos de valor já vêem sem vírgula como separador de milhar
 # obs: cuidado para limpar colunas de totais do xlsx
 #df_pg <- read.xlsx2("./data/Dados Raw-pgtos agencia 4c.csv", sheetIndex = 1, header = TRUE)
@@ -79,92 +83,6 @@ df_pg.primpg_dia <-
     df_pg.primpg_dia %>%
     mutate(pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia),
     vlpg.dia = ifelse(is.na(vlpg.dia), 0, vlpg.dia))
-#grid.arrange(pl_ac,pl_pg, nrow=2, ncol=1)
-# outra alternativa a grid
-#library(grid)
-#pushViewport(viewport(layout = grid.layout(2, 1)))
-#print(pl_ac, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
-#print(pl_pg, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
-
-# ACIONAMENTOS DE SMS
-##################
-#  obs: tem que converter para POSIXct para funcionar com dplyr!!!!
-#df_acion.sms$DIA.ACION <- as.POSIXct(trunc.POSIXt(df_acion.sms$DATA.ACION, units = "days"))
-# agrupando por dia 
-#df_acion_sms_dia <-
-#    df_acion.sms %>%
-#    group_by(DIA.ACION) %>%
-#    summarise(acions.dia = n())
-# POR DIA
-#ts_acion_dia <- ts(df_acion_dia$acions.dia, frequency=365, start=c(2014,365))
-#plot(ts_acion_dia)
-# ggplot 
-#pl_ac.sms <- ggplot(df_acion_sms_dia, aes(DIA.ACION, acions.dia)) + geom_line() + geom_smooth() +
-#    xlab("dia") + ylab("acionamentos") + ggtitle("Acionamentos (SMS)/Dia") +
-#    xlim(c(min(df_acion_sms_dia$DIA.ACION),max(df_acion_sms_dia$DIA.ACION)))
-
-# ACIONAMENTOS DE ATIVO
-##################
-#  obs: tem que converter para POSIXct para funcionar com dplyr!!!!
-#df_acion.atv$DIA.ACION <- as.POSIXct(trunc.POSIXt(df_acion.atv$DATA.ACION, units = "days"))
-# agrupando por dia 
-#df_acion_atv_dia <-
-#    df_acion.atv %>%
-#    group_by(DIA.ACION) %>%
-#    summarise(acions.dia = n())
-# POR DIA
-#ts_acion_dia <- ts(df_acion_dia$acions.dia, frequency=365, start=c(2014,365))
-#plot(ts_acion_dia)
-# ggplot 
-#pl_ac.atv <- ggplot(df_acion_atv_dia, aes(DIA.ACION, acions.dia)) + geom_line() + geom_smooth() +
-#    xlab("dia") + ylab("acionamentos") + ggtitle("Acionamentos (Ativo)/Dia") +
-#    xlim(c(min(df_acion_atv_dia$DIA.ACION),max(df_acion_atv_dia$DIA.ACION)))
-
-# ACIONAMENTOS DE RECEPTIVO
-##################
-#  obs: tem que converter para POSIXct para funcionar com dplyr!!!!
-#df_acion.rec$DIA.ACION <- as.POSIXct(trunc.POSIXt(df_acion.rec$DATA.ACION, units = "days"))
-# agrupando por dia 
-#df_acion_rec_dia <-
-#    df_acion.rec %>%
-#    group_by(DIA.ACION) %>%
-#    summarise(acions.dia = n())
-#df_acion_rec_dia <- na.omit(df_acion_rec_dia)
-# POR DIA
-#ts_acion_dia <- ts(df_acion_dia$acions.dia, frequency=365, start=c(2014,365))
-#plot(ts_acion_dia)
-# ggplot 
-#pl_ac.rec <- ggplot(df_acion_rec_dia, aes(DIA.ACION, acions.dia)) + geom_line() + geom_smooth() +
-#    xlab("dia") + ylab("acionamentos") + ggtitle("Acionamentos (Receptivo)/Dia") +
-#    xlim(c(min(df_acion_rec_dia$DIA.ACION),max(df_acion_rec_dia$DIA.ACION)))
-#grid.arrange(pl_ac,pl_pg, nrow=2, ncol=1)
-# outra alternativa a grid
-# plot por acionamento
-
-#pushViewport(viewport(layout = grid.layout(4, 1)))
-#print(pl_pg, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
-#print(pl_ac.sms, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
-#print(pl_ac.atv, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
-#print(pl_ac.rec, vp = viewport(layout.pos.row = 4, layout.pos.col = 1))
-
-# Mesmos plots por contrato
-#-----------------------------------------
-#df_pg.contr <-
-#    df_pg %>%
-#    arrange(CONTRATO,DTpgto) %>%
-#    group_by(CONTRATO) %>%
-#    mutate(VALOR.PAGO = sum(VlPag),
-#           NPARCELAS.PAGAS = n()) %>% # aqui cuidado, pois algumas parcelas se repetiram (??)
-#    distinct(CONTRATO) %>%
-#    select(-VlPag)
-# número de parcelas pagas por dia
-#pl_pg.rparc <- ggplot(df_pg.contr, aes(DTpgto, NPARCELAS.PAGAS)) + geom_line() + geom_smooth() +
-#    xlab("dia") + ylab("pagamentos") + ggtitle("Número de Parcelas/Dia") + 
-#    xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION)))
-# valor total pago por dia
-#pl_pg.ttpg <- ggplot(df_pg.contr, aes(DTpgto, VALOR.PAGO)) + geom_line() + geom_smooth() +
-#    xlab("dia") + ylab("pagamentos") + ggtitle("Valor Total Pago/Dia") + 
-#    xlim(c(min(df_acion_dia$DIA.ACION),max(df_acion_dia$DIA.ACION)))
 
 # TESTANDO OS ARQUIVOS RECEBIDOS DE SMS E TELEFONIA DO RAFAEL
 # 1. obter a quantidade de SMS enviados, agrupados por: com ou sem confirmação
@@ -172,6 +90,14 @@ df_pg.primpg_dia <-
 
 # LE arquivos SMS
 df_sms.2015 <- f_le_sms()
+# transformando em caracter o celular
+df_sms.2015 <-
+    df_sms.2015 %>%
+    mutate(Celular = as.character(Celular))
+# eliminando números esquisitos: terminados em 0000
+df_sms.2015 <-
+    df_sms.2015 %>%
+    filter(!grepl("0000$",Celular))
 
 # agrupar totais por dia, totais pro dia sem confirmação, totais por dia com confirmação
 # estatísticas iniciais
@@ -183,9 +109,9 @@ df_sms.2015 <-
     df_sms.2015 %>%
     filter(!(grepl("Não Recebido|Bloqueado",Status)))
 # eliminando não recebidos
-df_sms.2015 <-
-    df_sms.2015 %>%
-    filter(!(grepl("Não Recebido",Status)))
+#df_sms.2015 <-
+#    df_sms.2015 %>%
+#    filter(!(grepl("Não Recebido",Status)))
 
 # preparando formato correto de datas para plot
 df_sms.2015$Enviado.em <- as.Date(df_sms.2015$Enviado.em, "%d/%m/%Y")
@@ -855,8 +781,63 @@ acf2(residuals(tryit3))
 
 
 
+# TESTE: testando nro de acionamentos para ativo e sms ++++++++++++++++++
+# agrupa por dia e depois por celular
+df_sms.2015.conf.cel <-
+    df_sms.2015 %>%
+    group_by(Enviado.em,Celular) %>%
+    summarise(acions.dia = n())
+# assim posso filtrar somente acionamentos por celular maior que X para correlacionar
+# OBS: filtrar por n acionamentos por celular maior que X e repetir a correlação acima
+df_sms.2015.fx.1 <-
+    df_sms.2015.conf.cel %>%
+    filter(acions.dia == 1)
+df_sms.2015.fx.2.5 <-
+    df_sms.2015.conf.cel %>%
+    filter(acions.dia > 1 & acions.dia <= 5)
+df_sms.2015.fx.6.10 <-
+    df_sms.2015.conf.cel %>%
+    filter(acions.dia > 5 & acions.dia <= 10)
 
+# PAREI AQUIPOIS ESTA DANDO ERRO. PODE SER DO RSTUDIO. TENTAR DE NOVO E FAZER CORRELACAO
+# plotando time series
+#plot(df_sms.2015.conf.cel$acions.dia, type = "l")
+# eliminando gaps
+#dts_sms.conf <- as.data.frame(seq(as.Date("2015-04-08"), as.Date("2015-11-30"), "days"))
+#names(dts_sms.conf) <- "Enviado.em"
+#df_sms.2015.fx.1$Enviado.em <- as.Date(df_sms.2015.conf$Enviado.em)
+df_sms.2015.fx.2.5 <- full_join(df_sms.2015.fx.2.5,dts_sms.conf, by = "Enviado.em")
+#df_sms.2015.fx.1 <-
+#    df_sms.2015.fx.1 %>%
+#    mutate(acions.dia = ifelse(is.na(acions.dia), 0, acions.dia))
+pl_sms_conf.fx.2.5 <- ggplot(df_sms.2015.fx.2.5, aes(Enviado.em, acions.dia)) + geom_line() + geom_smooth() +
+    xlab("dia") + ylab("acionamentos") + ggtitle("SMS com Recebimento Confirmado/Dia") +
+    xlim(c(min(df_pg.primpg_dia$DTpgto),max(df_pg.primpg_dia$DTpgto))) +
+    ylim(c(min(df_sms.2015.conf$acions.dia),max(df_sms.2015.conf$acions.dia)))
+#plot(pl_sms_conf.fx.2.5$acions.dia, type = "l")
 
+# OBS: valores muito estranhos para alguns telefones com numeros estranhos e outros não
+# ex. 551170000000 e 
+#x <- df_sms.2015.conf.cel %>% mutate(Celular = as.numeric(as.character(Celular)))
+#x <- df_sms.2015.conf.cel %>%
+#    arrange(desc(acions.dia))
+#getOption("scipen") # obtendo default para display de notação científica em R
+#options(scipen=999) # removendo display de notação científica em R
+#t <- as.numeric(df_sms.2015.conf.cel[1,1])
+#(t)
+#options(scipen=0) # restaurando opção default
+#head(x) # numero para averiguar: 556292000000, 
+# filtrando menores de 1000
+#++++++++++++++++++++++++++++++++++++++++++++++++++++
+#df_sms.2015.conf.cel <-
+#    df_sms.2015.conf.cel %>%
+#    filter(acions.dia < 1000)
+# plotando time series
+plot(df_sms.2015.conf.cel$acions.dia, type = "l")
+#++++++++++++++++++++++++++++++++++++++++++++++++++++
+#df_sms.2015.conf.cel <-
+#    df_sms.2015.conf.cel %>%
+#    filter(acions.dia < 1000)
 # testando correlação entre acionamento e pagamento
 # antes fazer o merge para pegar as mesmas datas
 #x <- df_pg_dia
