@@ -89,6 +89,7 @@ df_pg.primpg_dia <-
 # 2. obter o dia do envio para comparar com time serie de pgtos
 
 # LE arquivos SMS
+##########################################
 df_sms.2015 <- f_le_sms()
 # transformando em caracter o celular
 df_sms.2015 <-
@@ -101,13 +102,14 @@ df_sms.2015 <-
 
 # agrupar totais por dia, totais pro dia sem confirmação, totais por dia com confirmação
 # estatísticas iniciais
-#table(df_sms.2015$Status)
 table(df_sms.2015$Status)
 prop.table(table(df_sms.2015$Status)) # confirmados: 34%, não confirmados: 40%, bloqueados: 4%, Não recebidos: 23%
+
 # eliminando não recebidos e bloqueados
 df_sms.2015 <-
     df_sms.2015 %>%
     filter(!(grepl("Não Recebido|Bloqueado",Status)))
+
 # eliminando não recebidos
 #df_sms.2015 <-
 #    df_sms.2015 %>%
@@ -118,7 +120,27 @@ df_sms.2015$Enviado.em <- as.Date(df_sms.2015$Enviado.em, "%d/%m/%Y")
 # transformando em PosixCt e truncando para tirar a hora
 #df_sms.2015$Enviado.em <- as.POSIXct(df_sms.2015$Enviado.em)
 #df_sms.2015$Enviado.em <- as.POSIXct(trunc.POSIXt(df_sms.2015$Enviado.em, units = "days"))
-# agrupando por dia 
+
+# TESTE +++++++++++++++++++++
+
+# realizar as mesmas análises abaixo mas somente para quem teve 1, 2, etc. acionamentos de SMS
+
+# agrupa por celular, somando acionamentos e selecionando celulares com 1 acionamento
+
+my.num.acion <- 3 # mudar este valor para selecionar qtos acionamentos por celular analisar
+
+df_sms.2015.conf.cel <-
+    df_sms.2015 %>%
+    group_by(Celular) %>%
+    summarise(acions.dia = n()) %>%
+    filter(acions.dia == my.num.acion)
+
+# filtra dos dados originais somente estes celulares
+df_sms.2015 <- inner_join(df_sms.2015,df_sms.2015.conf.cel, by = "Celular")
+
+#+++++++++++++++++++++++++++
+
+# SMS total agrupado por dia 
 df_sms.2015.tot <-
     df_sms.2015 %>%
     group_by(Enviado.em) %>%
@@ -140,11 +162,13 @@ df_sms.2015.conf <-
 #df_sms.2015.conf$Enviado.em <- as.Date(df_sms.2015.conf$Enviado.em, "%d/%m/%Y")
 # transformando em PosixCt
 #df_sms.2015.conf$Enviado.em <- as.POSIXct(df_sms.2015.conf$Enviado.em)
+
 # agrupando por dia 
 df_sms.2015.conf <-
     df_sms.2015.conf %>%
     group_by(Enviado.em) %>%
     summarise(acions.dia = n())
+
 # eliminando gaps
 dts_sms.conf <- as.data.frame(seq(as.Date("2015-04-08"), as.Date("2015-11-30"), "days"))
 names(dts_sms.conf) <- "Enviado.em"
@@ -423,7 +447,7 @@ NPGxSMS_Conf <-
 #z3 <- full_join(my.corr.vlpg,my.corr.sms.conf, by=c("DTpgto" = "Enviado.em"))
 #z3 <- na.omit(z3)
 #ccf(z3$acions.dia ,z3$pgto.dia, na.action = na.pass)
-# correlação com nro de primeiros pgtos dia
+# correlação com valor de primeiros pgtos dia
 #VPGxSMS_Conf <- full_join(my.corr.prpg,my.corr.sms.conf, by=c("DTpgto" = "Enviado.em"))
 VPGxSMS_Conf <-
     PGxSMS_Conf %>%
@@ -611,7 +635,7 @@ NPGxCHAT <-
 
 par(mfrow=c(2,3))
 ccf(NPGxSMS_Conf$acions.dia ,NPGxSMS_Conf$pgto.dia, 
-    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS Confirmado")
+    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS Confirmado - 3 acionamentos")
 #ccf(VPGxSMS_Conf$acions.dia ,VPGxSMS_Conf$vlpg.dia, na.action = na.pass, lag.max = 30)
 ccf(NPGxSMS_NConf$acions.dia ,NPGxSMS_NConf$pgto.dia, 
     na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS NÃO Confirmado")
@@ -782,38 +806,77 @@ acf2(residuals(tryit3))
 
 
 # TESTE: testando nro de acionamentos para ativo e sms ++++++++++++++++++
+# 1. obter nros de celulares que tem 1 acionamento de sms, depois 2, etc.
+# usar este vetor para filtrar os dados originais de sms e aplicar mesma análise 
+# acima para ver se melhor correlação com pgtos
+
+
+
+
+
 # agrupa por dia e depois por celular
-df_sms.2015.conf.cel <-
-    df_sms.2015 %>%
-    group_by(Enviado.em,Celular) %>%
-    summarise(acions.dia = n())
+# assim posso quebrar os dias por número de acionamento por celular. Ex. correlacionar
+# pgto somente com de 2 a 5 smsm por celular, etc.
+#df_sms.2015.conf.cel <-
+#    df_sms.2015 %>%
+#    group_by(Enviado.em,Celular) %>%
+#    summarise(acions.dia = n())
 # assim posso filtrar somente acionamentos por celular maior que X para correlacionar
 # OBS: filtrar por n acionamentos por celular maior que X e repetir a correlação acima
-df_sms.2015.fx.1 <-
-    df_sms.2015.conf.cel %>%
-    filter(acions.dia == 1)
-df_sms.2015.fx.2.5 <-
-    df_sms.2015.conf.cel %>%
-    filter(acions.dia > 1 & acions.dia <= 5)
-df_sms.2015.fx.6.10 <-
-    df_sms.2015.conf.cel %>%
-    filter(acions.dia > 5 & acions.dia <= 10)
+#df_sms.2015.fx.1 <-
+#    df_sms.2015.conf.cel %>%
+#    filter(acions.dia == 1)
+#my.corr.fx.1 <- df_sms.2015.fx.1
+#my.corr.fx.1$Enviado.em <- as.character(my.corr.fx.1$Enviado.em)
 
-# PAREI AQUIPOIS ESTA DANDO ERRO. PODE SER DO RSTUDIO. TENTAR DE NOVO E FAZER CORRELACAO
+#PGxSMS.FX.1 <- full_join(my.corr.prpg,my.corr.fx.1, by=c("DTpgto" = "Enviado.em"))
+#PGxSMS.FX.1 <-
+#    PGxSMS.FX.1 %>%
+##    mutate(acions.dia = ifelse(is.na(acions.dia), 0, acions.dia),
+#           pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia),
+#           vlpg.dia = ifelse(is.na(vlpg.dia), 0, vlpg.dia))
+
+#ccf(PGxSMS.FX.1$acions.dia ,PGxSMS.FX.1$pgto.dia, 
+#    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS Confirmado - 1 acionamento por celular")
+
+#df_sms.2015.fx.2.5 <-
+#    df_sms.2015.conf.cel %>%
+#    filter(acions.dia > 1 & acions.dia <= 5)
+#df_sms.2015.fx.6.10 <-
+#    df_sms.2015.conf.cel %>%
+#    filter(acions.dia > 5 & acions.dia <= 10)
+
+##my.corr.fx.2.5 <- df_sms.2015.fx.2.5
+#my.corr.fx.2.5$Enviado.em <- as.character(my.corr.fx.2.5$Enviado.em)
+
+#PGxSMS.FX.2.5 <- full_join(my.corr.prpg,my.corr.fx.2.5, by=c("DTpgto" = "Enviado.em"))
+#PGxSMS.FX.2.5 <-
+#    PGxSMS.FX.2.5 %>%
+#    mutate(acions.dia = ifelse(is.na(acions.dia), 0, acions.dia),
+#           pgto.dia = ifelse(is.na(pgto.dia), 0, pgto.dia),
+#           vlpg.dia = ifelse(is.na(vlpg.dia), 0, vlpg.dia))
+
+#ccf(PGxSMS.FX.2.5$acions.dia ,PGxSMS.FX.2.5$pgto.dia, 
+#    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS Confirmado - 2 a 5 acionamentos por celular")
+# CHECAR ACIMA SE VALORE FAZEM SENTIDO
+
+
+
+# PAREI AQUI POIS ESTA DANDO ERRO. PODE SER DO RSTUDIO. TENTAR DE NOVO E FAZER CORRELACAO
 # plotando time series
 #plot(df_sms.2015.conf.cel$acions.dia, type = "l")
 # eliminando gaps
 #dts_sms.conf <- as.data.frame(seq(as.Date("2015-04-08"), as.Date("2015-11-30"), "days"))
 #names(dts_sms.conf) <- "Enviado.em"
 #df_sms.2015.fx.1$Enviado.em <- as.Date(df_sms.2015.conf$Enviado.em)
-df_sms.2015.fx.2.5 <- full_join(df_sms.2015.fx.2.5,dts_sms.conf, by = "Enviado.em")
+#df_sms.2015.fx.2.5 <- full_join(df_sms.2015.fx.2.5,dts_sms.conf, by = "Enviado.em")
 #df_sms.2015.fx.1 <-
 #    df_sms.2015.fx.1 %>%
 #    mutate(acions.dia = ifelse(is.na(acions.dia), 0, acions.dia))
-pl_sms_conf.fx.2.5 <- ggplot(df_sms.2015.fx.2.5, aes(Enviado.em, acions.dia)) + geom_line() + geom_smooth() +
-    xlab("dia") + ylab("acionamentos") + ggtitle("SMS com Recebimento Confirmado/Dia") +
-    xlim(c(min(df_pg.primpg_dia$DTpgto),max(df_pg.primpg_dia$DTpgto))) +
-    ylim(c(min(df_sms.2015.conf$acions.dia),max(df_sms.2015.conf$acions.dia)))
+#pl_sms_conf.fx.2.5 <- ggplot(df_sms.2015.fx.2.5, aes(Enviado.em, acions.dia)) + geom_line() + geom_smooth() +
+#    xlab("dia") + ylab("acionamentos") + ggtitle("SMS com Recebimento Confirmado/Dia") +
+#    xlim(c(min(df_pg.primpg_dia$DTpgto),max(df_pg.primpg_dia$DTpgto))) +
+#    ylim(c(min(df_sms.2015.conf$acions.dia),max(df_sms.2015.conf$acions.dia)))
 #plot(pl_sms_conf.fx.2.5$acions.dia, type = "l")
 
 # OBS: valores muito estranhos para alguns telefones com numeros estranhos e outros não
@@ -833,7 +896,7 @@ pl_sms_conf.fx.2.5 <- ggplot(df_sms.2015.fx.2.5, aes(Enviado.em, acions.dia)) + 
 #    df_sms.2015.conf.cel %>%
 #    filter(acions.dia < 1000)
 # plotando time series
-plot(df_sms.2015.conf.cel$acions.dia, type = "l")
+#plot(df_sms.2015.conf.cel$acions.dia, type = "l")
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
 #df_sms.2015.conf.cel <-
 #    df_sms.2015.conf.cel %>%
