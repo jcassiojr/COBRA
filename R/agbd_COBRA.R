@@ -18,7 +18,7 @@ registerDoMC(5) # parallel processing
 
 # lê dados raw em 3 data.frames: acionamentos, carteira Avon e pagamentos
 ##########################################################################
-valor_divida = 1.0
+valor_divida = 50.0
 l_raw <- f_leRawCobra(valor_divida)
 # obtém dataframe
 df_acion <- l_raw[[1]]

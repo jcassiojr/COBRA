@@ -4,7 +4,7 @@
 # 2. obter o arquivo de pgtos efetuados de 15/10/2014 a 01/12/2015
 # 3. obter dados da carteira avon
 
-f_leRawCobra <- function(vl_divida_minimo) {
+f_leRawCobra <- function(vl_divida_minima) {
     # constantes
    # vl_divida_minimo = 1.0
     
@@ -37,7 +37,7 @@ f_leRawCobra <- function(vl_divida_minimo) {
     # Caso piore, roda ro modleo para todos e só no ranking filtrar por R$200
     df_carteira <-
         df_carteira %>%
-        filter (VALOR.DEVIDO >= vl_divida_minimo)
+        filter (VALOR.DEVIDO >= vl_divida_minima)
     
     # eliminando colunas desnecessárias
     df_carteira <-
@@ -62,8 +62,7 @@ f_leRawCobra <- function(vl_divida_minimo) {
                SUCESSO = SUCES_OCO,
                COD.ACION = ORIGE_AND,
                TIPO.ACION = Tipo_Acionamento)
-    
-    
+
     # obter dados de pgto
     ################################################################
     # obs: campos de valor já vêem sem vírgula como separador de milhar

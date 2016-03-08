@@ -41,7 +41,7 @@ source("~/Documents/MyGit/COBRA/R/f_previsao.R")
 options(digits=2)  # the default is 7, but it's more than I want now
 
 registerDoMC(5) # parallel processing
-divida_minima <- 1.0
+divida_minima <- 50.0
 # aumentando para 200.00 piorou a performance pois pega menos dados
 l_raw <- suppressWarnings(f_leRawCobra(divida_minima))
 # obtém dataframe
