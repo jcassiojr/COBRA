@@ -1,4 +1,5 @@
 # ler arquivos SMS
+require(dplyr)
 f_le_sms <- function() {
     df_sms.04.08 <- read.csv2("./data/SMS/04 - Abril/08-04.csv", encoding="latin1",
                               stringsAsFactors = FALSE, header = TRUE, skip = 1, sep = ";")

@@ -4,15 +4,14 @@
 # dataframes para acionamentos total, confirmados e não confirmados a serem aplicados a
 # funcão ccf()
 
-f_ccf_sms_pgto <- function(in.num.sms) {
+f_ccf_sms_pgto <- function(in.df_sms.2015, in.num.sms) {
     require("ggplot2")
     require("dplyr")
     require("xlsx")
     require("lubridate")
     require("grid")
     
-
-    source("~/Documents/MyGit/COBRA/R/f_le_sms.R")
+    #source("~/Documents/MyGit/COBRA/R/f_le_sms.R")
     
     #registerDoMC(5) # parallel processing
     
@@ -67,30 +66,7 @@ f_ccf_sms_pgto <- function(in.num.sms) {
     # 1. obter a quantidade de SMS enviados, agrupados por: com ou sem confirmação
     # 2. obter o dia do envio para comparar com time serie de pgtos
     
-    # LE arquivos SMS
-    ##########################################
-    df_sms.2015 <- f_le_sms()
-    # transformando em caracter o celular
-    df_sms.2015 <-
-        df_sms.2015 %>%
-        mutate(Celular = as.character(Celular))
-    # eliminando números esquisitos: terminados em 0000
-    df_sms.2015 <-
-        df_sms.2015 %>%
-        filter(!grepl("0000$",Celular))
     
-    # agrupar totais por dia, totais pro dia sem confirmação, totais por dia com confirmação
-    # estatísticas iniciais
-    #table(df_sms.2015$Status)
-    #prop.table(table(df_sms.2015$Status)) # confirmados: 34%, não confirmados: 40%, bloqueados: 4%, Não recebidos: 23%
-    
-    # eliminando não recebidos e bloqueados
-    df_sms.2015 <-
-        df_sms.2015 %>%
-        filter(!(grepl("Não Recebido|Bloqueado",Status)))
-    
-    # preparando formato correto de datas para plot
-    df_sms.2015$Enviado.em <- as.Date(df_sms.2015$Enviado.em, "%d/%m/%Y")
     # sumarizando acionamento por celular para posterior filtro nos dados lidos
     df_sms.2015.cel <-
         df_sms.2015 %>%
