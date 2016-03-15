@@ -18,7 +18,7 @@ df_sms.2015 <-
     df_sms.2015 %>%
     filter(!grepl("0000$",Celular))
 
-# agrupar totais por dia, totais pro dia sem confirmação, totais por dia com confirmação
+# agrupar totais por dia, totais por dia sem confirmação, totais por dia com confirmação
 # estatísticas iniciais
 #table(in.df_sms.2015$Status)
 #prop.table(table(in.df_sms.2015$Status)) # confirmados: 34%, não confirmados: 40%, bloqueados: 4%, Não recebidos: 23%
@@ -30,6 +30,12 @@ df_sms.2015 <-
 
 # preparando formato correto de datas para plot
 df_sms.2015$Enviado.em <- as.Date(df_sms.2015$Enviado.em, "%d/%m/%Y")
+
+# usar abaixo para filtrar por DDD e depois agrupar para análise
+PAREI AQUI
+x <-
+    df_sms.2015 %>%
+    filter(!grepl("5511",Celular))
 
 
 # chama funcao passando o numero de acionamentos de sms desejado por celular
@@ -104,13 +110,13 @@ my.ccf.6 <- ccf(my.list.6[[6]]$acions.dia ,my.list.6[[6]]$pgto.dia,
 
 par(mfrow=c(2,3))
 my.ccf.7 <- ccf(my.list.7[[6]]$acions.dia ,my.list.7[[6]]$pgto.dia, 
-    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS Confirmado - 7 acionamentos")
+    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "7 confirmed SMS")
 my.ccf.8 <- ccf(my.list.8[[6]]$acions.dia ,my.list.8[[6]]$pgto.dia, 
-    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS Confirmado - 8 acionamentos")
+    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "8 confirmed SMS")
 my.ccf.9 <- ccf(my.list.9[[6]]$acions.dia ,my.list.9[[6]]$pgto.dia, 
-    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS Confirmado - 9 acionamentos")
+    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "9 confirmed SMS")
 my.ccf.10 <- ccf(my.list.10[[6]]$acions.dia ,my.list.10[[6]]$pgto.dia, 
-    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS Confirmado - 10 acionamentos")
+    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "10 confirmed SMS")
 
 par(mfrow=c(2,3))
 my.ccf.11 <- ccf(my.list.11[[6]]$acions.dia ,my.list.11[[6]]$pgto.dia, 
@@ -299,14 +305,14 @@ my.df_max_corr <-
 
 pl_max_lag <- ggplot(my.df_max_corr, aes(lag, corr)) + geom_line() + geom_smooth() +
     xlab("lag") + ylab("correlação") + 
-    ggtitle("Máximo de Pagamentos: 10 a 13 dias após acionamentos confirmados") 
+    ggtitle("Máximo de Pgtos: 10-13 dias após SMS confirmados") 
     #ylim(c(min(my.df_max_corr$corr),max(my.df_max_corr$corr)))
 
 # plot de maiores correlações x nro de acionamentos
 
 pl_max_corr <- ggplot(my.df_max_corr, aes(n.acion, corr)) + geom_line() + geom_smooth() +
     xlab("# acionamentos") + ylab("correlação") + 
-    ggtitle("Máximo de Pagamentos: em torno de 8 acionamentos SMS confirmados") 
+    ggtitle("Máximo de Pgtos: 8 acionamentos SMS confirmados") 
 #xlim(c(min(df_pg.primpg_dia$DTpgto),max(df_pg.primpg_dia$DTpgto)))
 
 pushViewport(viewport(layout = grid.layout(1, 2)))

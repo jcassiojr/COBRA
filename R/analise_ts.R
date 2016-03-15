@@ -16,7 +16,7 @@ source("~/Documents/MyGit/COBRA/R/f_le_xml.R")
 # obter dados de pgto totais (não somente Avon)
 ################################################################
 
-getOption("scipen") # obtendo default para display de notação científica em R
+#getOption("scipen") # obtendo default para display de notação científica em R
 options(scipen=999) # removendo display de notação científica em R
 #options(scipen=0) # restaurando opção default
 # obs: campos de valor já vêem sem vírgula como separador de milhar
