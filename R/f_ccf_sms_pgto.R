@@ -69,17 +69,17 @@ f_ccf_sms_pgto <- function(in.df_sms.2015, in.num.sms) {
     
     # sumarizando acionamento por celular para posterior filtro nos dados lidos
     df_sms.2015.cel <-
-        df_sms.2015 %>%
+        in.df_sms.2015 %>%
         group_by(Celular) %>%
         summarise(acions.dia = n()) %>%
         filter(acions.dia == in.num.sms)
     
     # filtra dos dados originais somente estes celulares
-    df_sms.2015 <- inner_join(df_sms.2015,df_sms.2015.cel, by = "Celular")
+    in.df_sms.2015 <- inner_join(in.df_sms.2015,df_sms.2015.cel, by = "Celular")
     
     # SMS total agrupado por dia 
     df_sms.2015.tot <-
-        df_sms.2015 %>%
+        in.df_sms.2015 %>%
         group_by(Enviado.em) %>%
         summarise(acions.dia = n())
     
@@ -90,7 +90,7 @@ f_ccf_sms_pgto <- function(in.df_sms.2015, in.num.sms) {
     # filtrando Confirmados
     #########################
     df_sms.2015.conf <-
-        df_sms.2015 %>%
+        in.df_sms.2015 %>%
         filter(grepl("Entregue com Confirmação",Status))
     
     # agrupando por dia 
@@ -111,7 +111,7 @@ f_ccf_sms_pgto <- function(in.df_sms.2015, in.num.sms) {
     # filtrando Não Confirmados
     ##############################
     df_sms.2015.nconf <-
-        df_sms.2015 %>%
+        in.df_sms.2015 %>%
         filter(grepl("Entregue sem Confirmação",Status))
     
     # agrupando por dia 

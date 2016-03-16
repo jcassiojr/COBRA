@@ -138,6 +138,7 @@ df_sms.2015.conf.cel <-
 # filtra dos dados originais somente estes celulares
 df_sms.2015 <- inner_join(df_sms.2015,df_sms.2015.conf.cel, by = "Celular")
 
+
 #+++++++++++++++++++++++++++
 
 # SMS total agrupado por dia 
