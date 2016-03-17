@@ -3,6 +3,8 @@ require("doMC")
 
 source("~/Documents/MyGit/COBRA/R/f_ccf_sms_pgto.R")
 source("~/Documents/MyGit/COBRA/R/f_le_sms.R")
+source("~/Documents/MyGit/COBRA/R/f_nacion_reg.R")
+
 
 registerDoMC(5) # parallel processing
 
@@ -282,7 +284,6 @@ my.df_corr <- as.data.frame(cbind(lag = my.v_lag, corr = my.v_corr)) #data.frame
 my.df_corr <-
     my.df_corr %>%
     filter(lag < 0)
-#my.df_corr [which.max(my.df_corr[,2]),]
 
 my.df_max_corr <- rbind(my.df_max_corr,my.df_corr [which.max(my.df_corr[,2]),])
 
@@ -293,7 +294,6 @@ my.df_corr <- as.data.frame(cbind(lag = my.v_lag, corr = my.v_corr)) #data.frame
 my.df_corr <-
     my.df_corr %>%
     filter(lag < 0)
-#my.df_corr [which.max(my.df_corr[,2]),]
 
 my.df_max_corr <- rbind(my.df_max_corr,my.df_corr [which.max(my.df_corr[,2]),])
 
@@ -302,7 +302,6 @@ my.df_max_corr <-
     mutate(n.acion = seq(1:15))
 
 # plot de maiores correlações por lag
-
 pl_max_lag <- ggplot(my.df_max_corr, aes(lag, corr)) + geom_line() + geom_smooth() +
     xlab("lag") + ylab("correlação") + 
     ggtitle("Máximo de Pgtos: 10-13 dias após SMS confirmados") 
@@ -319,77 +318,40 @@ pushViewport(viewport(layout = grid.layout(1, 2)))
 print(pl_max_lag, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
 print(pl_max_corr, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
 
-# tabela de maiores corelações e em que lag (montar)
-# salvar cada objeto retornado de ccf acima e selecionar o lag com maior correlação
-# para cada nro de acionamentos, montando data frame nr.acion.por x max(corr)
-# fazer plot dos máximos par amostra pico em 8 acions!!
 
-
-
-# TESTE++++++++ DAQUI P BAIXO OK +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# TESTE DE AGRUPAMENTO POR REGIAO ++++++++ DAQUI P BAIXO OK +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # usar abaixo para filtrar por DDD - SP e depois agrupar para análise
 #################################
-df_sms.2015.SP <-
-    df_sms.2015 %>%
-    filter(grepl("^551",Celular))
+ddd <- "^551"
+nacion.max <- 15
+l_nacion <- f_nacion_reg(df_sms.2015, ddd,nacion.max)
+pl_max_lag <- l_nacion$plot.lag
+pl_max_corr <- l_nacion$plot.acion
+my.df_max_corr <- l_nacion$df.max.corr
+my.lm.n.acion <- l_nacion$reg.lin
 
-# loop para gerar lista de 1 a 15 acionamentos
-max.nacion <- 15
-my.df_max_corr <- data.frame()
-
-for(i in 1:max.nacion) {
-    my.list <- f_ccf_sms_pgto(df_sms.2015.SP, i)
-    my.ccf <- ccf(my.list[[6]]$acions.dia ,my.list[[6]]$pgto.dia, 
-                    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), 
-                    plot = FALSE)
-
-    my.v_corr <- as.numeric(my.ccf$acf)
-    my.v_lag <- as.numeric(my.ccf$lag)
-    my.df_corr <- as.data.frame(cbind(lag = my.v_lag, corr = my.v_corr)) #data.frame com lags
-    my.df_corr <-
-        my.df_corr %>%
-        filter(lag < 0)
-    my.df_max_corr <- rbind(my.df_max_corr,my.df_corr [which.max(my.df_corr[,2]),])    
-}
-
-my.df_max_corr <-
-    my.df_max_corr %>%
-    mutate(n.acion = seq(1:15))
-
-# plot de maiores correlações por lag
-# FALTE DEFINIR O CONCEITO IMPORTANTE AQUI
-# é importante saber quais os nro acionamentos tem maior correlacao com pgto (plot2)
-# e quais lags tem maior correlaçao com pgto. Portanto, plot lag x corr
-# IMPORTANTE: DESCOBRI CORRELACAO ENTRE corr e n.acions!!! tem sentido (ver abaixo!!!)
-# a correlaçao mede o quanto o pagto está relacionado ao acionamento. Se a corr está correlacionada ao
-# nro de acionamentos, podemos confirmar que quanto mais mandamos sms conformado mais forte a
-# correlacao com pgto efetuado!!!!!
-# FALTA OBTER O R-Square desta correlação
-x <- lm(my.df_max_corr$corr ~ my.df_max_corr$n.acion)
-summary(x) # r-squared = 78% !!!!!
-
-plot(my.df_max_corr)
-# E LAG x CORR mostra clusterização entre -15 e -20 dias!!!!!
-# Elaborar acima na apresentação e no post˜˜˜
-
-pl_max_lag <- ggplot(my.df_max_corr, aes(lag, corr)) + geom_line() + 
-    #geom_smooth() +
-    xlab("lag") + ylab("correlação") + 
-    ggtitle("Máximo de Pgtos - SMS confirmados-SP") 
-#ylim(c(min(my.df_max_corr$corr),max(my.df_max_corr$corr)))
-
-# plot de maiores correlações x nro de acionamentos
-
-pl_max_corr <- ggplot(my.df_max_corr, aes(n.acion, corr)) + geom_line() + geom_smooth() +
-    xlab("# acionamentos") + ylab("correlação") + 
-    ggtitle("Máximo de Pgtos - SMS confirmados-SP") 
-
+# plot das correlações máximas por lag e por número de acionamentos
 pushViewport(viewport(layout = grid.layout(1, 2)))
 print(pl_max_lag, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
 print(pl_max_corr, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
 
-# +++++++++++ DAQUI PARA CIMA OK +++++++++++++
+# plot da correlação e valor de R squared
 
+# IMPORTANTE: O R Squared da correlação entre:
+#   valor de máximas correlações entre nro de sms x pagto, distribuídos por número de acionamentos e
+#   distribuição de número d eacionamentos
+# comprova relação direta e forte (> 70%) entre número de acionamentos x pagamentos efetuados
+my.lm.descr <-  summary(my.lm.n.acion)
+sprintf("R Squared: %.3f",  my.lm.descr$r.squared)
+
+# plot das correlações permite ver agrupamento de lags para maior correlação nro acion x pgto
+# o plot permite visualmente identificar os lags com maior correlação com pgto, permitindo
+# planejar e entrada dos pagamentos no tempo após os acionamentos, por região
+plot(my.df_max_corr)
+
+
+# +++++++++++ DAQUI PARA CIMA OK +++++++++++++
+# FALTA FAZER ACIMA PARA CADA REGIAO DO BRASIL
 
 # varios acessos para confirmados
 nr.sms  <- 1 # número de acionamentos por celular para filtrar os dados
