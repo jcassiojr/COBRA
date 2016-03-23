@@ -25,10 +25,15 @@ df_sms.2015 <-
 #table(in.df_sms.2015$Status)
 #prop.table(table(in.df_sms.2015$Status)) # confirmados: 34%, não confirmados: 40%, bloqueados: 4%, Não recebidos: 23%
 
+# eliminando não recebidos e bloqueados 
+#df_sms.2015 <-
+#    df_sms.2015 %>%
+#    filter(!(grepl("Não Recebido|Bloqueado",Status)))
+
 # filtrando somente confirmados
 df_sms.2015 <-
     df_sms.2015 %>%
-    filter(!(grepl("Entregue com Confirmação",Status)))
+    filter(grepl("Entregue com Confirmação",Status))
 # obs: depois repetir analise para status (Entregue com Confirmação!!!!)
 
 # obtendo somente SMS onde consta o codigo de barra
@@ -40,12 +45,12 @@ df_sms.2015 <-
 df_sms.2015$Enviado.em <- as.Date(df_sms.2015$Enviado.em, "%d/%m/%Y")
 
 # obtendo média total de sms por celular
-df_sms.2015.ncel <-
-    df_sms.2015 %>%
-    group_by(Celular) %>%
-    summarise(acions.cel = n())
+#df_sms.2015.ncel <-
+#    df_sms.2015 %>%
+#    group_by(Celular) %>%
+#    summarise(acions.cel = n())
 
-summary(df_sms.2015.ncel$acions.cel)
+#summary(df_sms.2015.ncel$acions.cel)
 
 # COMENTADOS ABAIXO PARA ANALISE SEM DIVIDIR POR REGIAO DE DDD
 ################################################################
@@ -154,6 +159,35 @@ summary(df_sms.2015.ncel$acions.cel)
 # TESTE DE AGRUPAMENTO POR REGIAO ++++++++ DAQUI P BAIXO OK +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # usar abaixo para filtrar por DDD - SP e depois agrupar para análise
 #################################
+# DDD TODOS
+########
+ddd <- "^55"
+nacion.max <- 15
+l_nacion <- f_nacion_reg(df_sms.2015, ddd,nacion.max)
+pl_max_lag.SP <- l_nacion$plot.lag
+pl_max_corr.SP <- l_nacion$plot.acion
+my.df_max_corr.SP <- l_nacion$df.max.corr
+my.lm.n.acion.SP <- l_nacion$reg.lin
+my.df_nacion.cel <- l_nacion$nacion.cel
+
+# plot das correlações máximas por lag e por número de acionamentos
+pushViewport(viewport(layout = grid.layout(1, 2)))
+print(pl_max_lag.SP, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+print(pl_max_corr.SP, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
+
+# plot da correlação e valor de R squared
+
+# IMPORTANTE: O R Squared da correlação entre:
+#   valor de máximas correlações entre nro de sms x pagto, distribuídos por número de acionamentos e
+#   distribuição de número d eacionamentos
+# comprova relação direta e forte (> 70%) entre número de acionamentos x pagamentos efetuados
+my.lm.descr <-  summary(my.lm.n.acion.SP)
+sprintf("R Squared: %.3f",  my.lm.descr$r.squared)
+
+# plot das correlações permite ver agrupamento de lags para maior correlação nro acion x pgto
+# o plot permite visualmente identificar os lags com maior correlação com pgto, permitindo
+# planejar e entrada dos pagamentos no tempo após os acionamentos, por região
+plot(my.df_max_corr.SP)
 
 # DDD SP
 ########
@@ -407,15 +441,15 @@ plot(my.df_max_corr.NE)
 ddd <- "^559"
 nacion.max <- 15
 l_nacion <- f_nacion_reg(df_sms.2015, ddd,nacion.max)
-pl_max_lag.SP <- l_nacion$plot.lag
-pl_max_corr.SP <- l_nacion$plot.acion
-my.df_max_corr.SP <- l_nacion$df.max.corr
-my.lm.n.acion.SP <- l_nacion$reg.lin
+pl_max_lag.NO <- l_nacion$plot.lag
+pl_max_corr.NO <- l_nacion$plot.acion
+my.df_max_corr.NO <- l_nacion$df.max.corr
+my.lm.n.acion.NO <- l_nacion$reg.lin
 
 # plot das correlações máximas por lag e por número de acionamentos
 pushViewport(viewport(layout = grid.layout(1, 2)))
-print(pl_max_lag.SP, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
-print(pl_max_corr.SP, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
+print(pl_max_lag.NO, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+print(pl_max_corr.NO, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
 
 # plot da correlação e valor de R squared
 

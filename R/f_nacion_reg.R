@@ -1,5 +1,6 @@
 # funcao que correlaciona numero de acionamentos pos região de DDD
-# input: string de DDD da regiao, numero maximo de acionamentos
+# input: dataframe de acionamentos, string de DDD da regiao, 
+# numero maximo de acionamentos
 # output: lista com df com lag, corr, nacion para cada numero de acionamento
 #         objeto retorno da regressao linear para obter plot e summary com R-squared
 #         objeto plot de corr.nacion com smooth para ver pico
@@ -66,14 +67,14 @@ f_nacion_reg <- function(df_sms.2015.in, ddd.in, nacion.max.in) {
         geom_line() + 
         #geom_smooth() +
         xlab("lag") + ylab("correlação") + 
-        ggtitle("Máximo de Pgtos - SMS confirmados-SP") 
+        ggtitle(paste0("Máximo de Pgtos - SMS confirmados - DDD: ", ddd.in) 
     #ylim(c(min(my.df_max_corr$corr),max(my.df_max_corr$corr)))
     #heatmap.2(as.matrix(my.df_max_corr[,1:2]))
     # plot de maiores correlações x nro de acionamentos
 
     pl_max_acion <- ggplot(my.df_max_corr, aes(n.acion, corr)) + geom_line() + geom_smooth() +
         xlab("# acionamentos") + ylab("correlação") + 
-        ggtitle("Máximo de Pgtos - SMS confirmados-SP") 
+        ggtitle(paste0("Máximo de Pgtos - SMS confirmados - DDD: ", ddd.in) 
     
     #pushViewport(viewport(layout = grid.layout(1, 2)))
     #print(pl_max_lag, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
