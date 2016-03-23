@@ -1,19 +1,19 @@
-# funcão de correlacionar time series de sms x pgtos realizadoa
-# input: número de acionamentos de sms por celular
+# funcão de correlacionar time series de sms x pgtos realizados
+# input: dataframe de sms lidos, número de acionamentos de sms por celular
+# se numero de acionamentos é zero, pega toda a base
 # output: lista com os plots gerados para acionamento total, confirmado e não confirmado,
 # dataframes para acionamentos total, confirmados e não confirmados a serem aplicados a
 # funcão ccf()
+require("ggplot2")
+require("dplyr")
+require("xlsx")
+require("lubridate")
+require("grid")
 
 f_ccf_sms_pgto <- function(in.df_sms.2015, in.num.sms) {
-    require("ggplot2")
-    require("dplyr")
-    require("xlsx")
-    require("lubridate")
-    require("grid")
-    
     #source("~/Documents/MyGit/COBRA/R/f_le_sms.R")
     
-    #registerDoMC(5) # parallel processing
+    registerDoMC(5) # parallel processing
     
     # PGTO 
     ##############
@@ -66,13 +66,33 @@ f_ccf_sms_pgto <- function(in.df_sms.2015, in.num.sms) {
     # 1. obter a quantidade de SMS enviados, agrupados por: com ou sem confirmação
     # 2. obter o dia do envio para comparar com time serie de pgtos
     
-    
+    # obtendo periodo de envio de sms por celular
+    #periodo.sms = as.numeric(difftime(strptime(max(in.df_sms.2015$Enviado.em), "%d/%m/%Y"),
+    #                                  strptime(min(in.df_sms.2015$Enviado.em), "%d/%m/%Y")))) %>% # periodo.acion %>%
     # sumarizando acionamento por celular para posterior filtro nos dados lidos
-    df_sms.2015.cel <-
-        in.df_sms.2015 %>%
-        group_by(Celular) %>%
-        summarise(acions.dia = n()) %>%
-        filter(acions.dia == in.num.sms)
+    # demorado!!!
+    if(in.num.sms != 0) {
+        df_sms.2015.cel <-
+            in.df_sms.2015 %>%
+            group_by(Celular) %>%
+            summarise(acions.dia = n()) %>%
+            filter(acions.dia == in.num.sms) 
+    } else {
+        df_sms.2015.cel <-
+            in.df_sms.2015 %>%
+            group_by(Celular) %>%
+            summarise(acions.dia = n()) 
+    }
+    # se não der certo acima, fazer em duas partes, primeiro salvando min e max sem agrupar
+    # e depois agrupar por celular
+    #df_sms.2015.cel <-
+    #    df_sms.2015.cel %>%
+    #    mutate(periodo.sms = as.numeric(difftime(max.acion,min.acion)))
+    # obtem periodo entre primeiro e ultimo acionamento, podemos filtrar eliminar os que stão
+    # distribuídos em intrvalos muito grandes (meses). Tb pode ser criada feature de faixa.tempo
+    # para ser usada como feature no modelo preditivo
+    # abaixo funciona!!!!
+    #periodo.sms = as.numeric(difftime(strptime(in.df_sms.2015$Enviado.em, "%d/%m/%Y"),strptime(in.df_sms.2015$Enviado.em, "%d/%m/%Y")))) %>% # periodo.acion
     
     # filtra dos dados originais somente estes celulares
     in.df_sms.2015 <- inner_join(in.df_sms.2015,df_sms.2015.cel, by = "Celular")

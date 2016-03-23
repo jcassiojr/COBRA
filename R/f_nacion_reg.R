@@ -3,6 +3,7 @@
 # output: lista com df com lag, corr, nacion para cada numero de acionamento
 #         objeto retorno da regressao linear para obter plot e summary com R-squared
 #         objeto plot de corr.nacion com smooth para ver pico
+#         data frame sumarizado de numero de sms por celular para a região
 f_nacion_reg <- function(df_sms.2015.in, ddd.in, nacion.max.in) {
     # ddd.in <- "^551"
     # nacion.max.in <- 15
@@ -10,6 +11,15 @@ f_nacion_reg <- function(df_sms.2015.in, ddd.in, nacion.max.in) {
         df_sms.2015.in %>%
         filter(grepl(ddd.in,Celular))
     
+    # numero de sms por celular
+    df_sms.regiao.mn <-
+        df_sms.regiao %>%
+        group_by(Celular) %>%
+        summarise(acions.cel = n())
+    
+    #boxplot(df_sms.regiao.mn$acions.cel)
+    #hist(df_sms.regiao.mn$acions.cel)
+    #summary(df_sms.regiao.mn)
     # loop para gerar lista de 1 a 15 acionamentos
     #max.nacion <- 15
     my.df_max_corr <- data.frame()
@@ -31,7 +41,7 @@ f_nacion_reg <- function(df_sms.2015.in, ddd.in, nacion.max.in) {
     
     my.df_max_corr <-
         my.df_max_corr %>%
-        mutate(n.acion = seq(1:nacion.max.in))
+        mutate(n.acion = seq(1:dim(my.df_max_corr)[1]))
     
     # plot de maiores correlações por lag
     # FALTE DEFINIR O CONCEITO IMPORTANTE AQUI
@@ -53,7 +63,7 @@ f_nacion_reg <- function(df_sms.2015.in, ddd.in, nacion.max.in) {
     # Elaborar acima na apresentação e no post˜˜˜
     
     pl_max_lag <- ggplot(my.df_max_corr, aes(lag, corr)) +
-        geom_point(stat="density") + 
+        geom_line() + 
         #geom_smooth() +
         xlab("lag") + ylab("correlação") + 
         ggtitle("Máximo de Pgtos - SMS confirmados-SP") 
@@ -69,7 +79,8 @@ f_nacion_reg <- function(df_sms.2015.in, ddd.in, nacion.max.in) {
     #print(pl_max_lag, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
     #print(pl_max_corr, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
     
-    l.out <- list(plot.lag = pl_max_lag, plot.acion = pl_max_acion, df.max.corr = my.df_max_corr, reg.lin = my.lm.n.acion)
+    l.out <- list(plot.lag = pl_max_lag, plot.acion = pl_max_acion, 
+                  df.max.corr = my.df_max_corr, reg.lin = my.lm.n.acion, nacion.cel = df_sms.regiao.mn)
     
     return(l.out)
 }
