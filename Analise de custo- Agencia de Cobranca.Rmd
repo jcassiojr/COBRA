@@ -30,7 +30,7 @@ source("~/Documents/MyGit/COBRA/R/f_ccf_sms_pgto.R")
 source("~/Documents/MyGit/COBRA/R/f_le_sms.R")
 source("~/Documents/MyGit/COBRA/R/f_nacion_reg.R")
 
-registerDoMC(5) # parallel processing
+registerDoMC(8) # parallel processing
 options(scipen=999) # removendo display de notação científica em R
 ```
 
