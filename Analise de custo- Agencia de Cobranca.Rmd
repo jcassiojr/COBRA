@@ -310,7 +310,7 @@ pl_max_corr.BA.SE <- l_nacion$plot.acion
 my.df_max_corr.BA.SE <- l_nacion$df.max.corr
 my.lm.n.acion.BA.SE <- l_nacion$reg.lin
 
-# plot das correlações máximas por lag e por número de acionamentos
+    # plot das correlações máximas por lag e por número de acionamentos
 pushViewport(viewport(layout = grid.layout(1, 2)))
 print(pl_max_lag.BA.SE, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
 print(pl_max_corr.BA.SE, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
