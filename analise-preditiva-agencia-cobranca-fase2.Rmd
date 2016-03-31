@@ -1,0 +1,408 @@
+---
+title: "Análise Preditiva - Agência de Cobrança - DRAFT"
+author: "José Cassio"
+date: "March 31, 2016"
+output:
+  html_document
+---
+
+![agileBIGDATA](./aBIG5.png)
+
+Este documento descreve uma nova análise preditiva realizada com o objetivo de melhorar a performance de cobrança da **Agência de Cobrança Asserth**, baseado em dados de cobrança da Avon.
+Nesta análise, ao invés de considerar o primeiro pagamento efetuado, como na análise anterior, considera quitação total da dívida pelo cliente.
+
+### Preparação dos dados ###
+Foram obtidos os dados brutos das seguintes fontes:
+
+* Base completa Clientes Agencia-31-03-2016.rpt (Dados totais das carteiras atualizados)
+* Base completa Clientes Agencia QUITADOS-31-03-2016.rpt (Dados de contratos quitados da mesma base atulizada)
+
+Os arquivos acima foram preparados, gerando:
+
+```{r,echo=FALSE}
+#require("xlsx", quietly = TRUE, warn.conflicts = FALSE)
+#require("lubridate", quietly = TRUE, warn.conflicts = FALSE)
+require("caret", quietly = TRUE, warn.conflicts = FALSE)
+#require("gplots", quietly = TRUE, warn.conflicts = FALSE)
+#require("ROCR", quietly = TRUE, warn.conflicts = FALSE) # aqui gera comentários no Rmd
+require("doMC", quietly = TRUE, warn.conflicts = FALSE)
+#require("MASS", quietly = TRUE, warn.conflicts = FALSE)
+require("dplyr", quietly = TRUE, warn.conflicts = FALSE)
+#require("corrplot", quietly = TRUE, warn.conflicts = FALSE)
+#require("klaR", quietly = TRUE, warn.conflicts = FALSE)
+
+source("~/Documents/MyGit/COBRA/R/f_opt_cut.R")
+source("~/Documents/MyGit/COBRA/R/f_prep_uso.R")
+source("~/Documents/MyGit/COBRA/R/f_previsao.R")
+# general options
+options(digits=2)  # the default is 7, but it's more than I want now
+
+registerDoMC(8) # parallel processing
+divida_minima <- 50.0
+
+# DADOS DE CARTEIRA E PGTO
+#######################################
+
+# lendo base total nova enviada em 31-03-2016 por Andre Andrade
+df_base <- read.csv("./data/Base completa Clientes Agencia-31-03-2016.rpt", sep = "|", header = TRUE, stringsAsFactors = FALSE)
+# tirando contratos duplicados e ultima linha de totais
+df_base <-
+    df_base %>%
+    distinct((CONTRATO)) %>%
+    filter(!(grepl("afetadas", CARTEIRA)))
+# lendo base total nova enviada em 31-03-2016 por Andre Andrade com QUITADOS
+df_base_quit <- read.csv("./data/Base completa Clientes Agencia QUITADOS-31-03-2016.rpt", sep = "|", header = TRUE, stringsAsFactors = FALSE)
+# tirando contratos duplicados
+df_base_quit <-
+    df_base_quit %>%
+    distinct((CONTRATO)) %>%
+    filter(!(grepl("afetadas", CARTEIRA)))
+
+# criar coluna quitado (S/N) na base original
+df_quit <- left_join(df_base, df_base_quit, by = "CONTRATO")
+
+# criando mais uma opção na coluna status = "quitado"
+df_quit <- 
+    df_quit %>%
+    mutate(Status.x = ifelse(!(is.na(Status.y)), "quitado", Status.x))
+
+# removendo as colunas duplicadas apos join
+df_quit <-
+    df_quit %>%
+    select(CARTEIRA.x,CONTRATO, TITUL_TRA.x, NOME.x,DIAS_ATRASO.x, VLSAL_CON.x, JUROS.x,
+           VLORI_TRA.x,SETOR.x,Status.x) %>%
+    rename(CARTEIRA = CARTEIRA.x,
+           TITUL_TRA = TITUL_TRA.x, 
+           NOME = NOME.x,
+           DIAS_ATRASO = DIAS_ATRASO.x, 
+           VLSAL_CON = VLSAL_CON.x, 
+           JUROS = JUROS.x,
+           VLORI_TRA = VLORI_TRA.x,
+           SETOR = SETOR.x,
+           Status = Status.x)
+# primeiro tirando a vírgula das colunas de valores
+#df_quit <-
+#    df_quit %>%
+#    mutate(Valor = as.numeric(gsub(",","", Valor)))
+# convertendo coluna valor em numérica
+#x <-
+#    df_quit %>%
+#    mutate(JUROS = as.numeric(gsub(",",".", JUROS))) # muda virgula para ponto
+
+#a <- df_quit %>% filter(grepl("Incobraveis", CARTEIRA))
+table(df_quit$Status) # deve dar mesmo nro de linhas do df_base_quitado
+prop.table(table(df_quit$Status))
+
+# agora tenho o target quitado e posso aplicar o modelo!!!
+df_quit <-
+    df_quit %>%
+    mutate(quitado = ifelse(Status == "quitado", "S", "N"),
+           JUROS = as.numeric(gsub(",",".", JUROS)),
+           VALOR.DEVIDO = VLSAL_CON + JUROS + VLORI_TRA) %>% # convertendo para numerico,primeiro trocando a vírgula
+    select(-VLSAL_CON,-JUROS, -VLORI_TRA)
+    #mutate(VALOR.DEVIDO = VLSAL_CON + as.mumeric(JUROS) + VLORI_TRA)) # somando divida total
+df_quit <- na.omit(df_quit)
+table(df_quit$quitado)
+prop.table(table(df_quit$quitado))
+
+# DADOS DE ACIONAMENTO
+#######################################
+# ler planilha com dados de acionamentos
+#    df_acion <- read.csv("./data/Acionamentos Avon-14-12-2015.rpt", skip = 2, sep = "|", header = TRUE)
+    # elimina última linha de totalização
+#    df_acion <- na.omit(df_acion)
+    
+    # mudando nomes dos headers
+    #colnames (df_acion) <- c("CONTRATO", "OCORRENCIA", "DATA.ACION", "SUCESSO", "COD.ACION", "TIPO.ACION")
+#    df_acion <-
+#        df_acion %>%
+#        rename(CONTRATO = REG_ASK,
+#               OCORRENCIA = DESCR_OCO,
+#               DATA.ACION = DTAND_AND,
+#               SUCESSO = SUCES_OCO,
+#               COD.ACION = ORIGE_AND,
+#               TIPO.ACION = Tipo_Acionamento)
+
+# COMPLEMENTANDO COM NOVOS ATRIBUTOS A BASE QUITADA
+####################################################
+
+df_cart.incobr <- read.csv("./data/Carteira Avon-274-Incobravel-SemDUPLI.csv", stringsAsFactors=FALSE, fileEncoding="latin1", header = TRUE)
+
+df_cart.cobr <- read.csv("./data/Carteira Avon-274-Cobravel-SemDUPLI.csv", stringsAsFactors=FALSE, fileEncoding="latin1", header = TRUE)
+
+# removendo NA
+df_cart.cobr <- na.omit(df_cart.cobr)
+df_cart.incobr <- na.omit(df_cart.incobr)
+
+# eliminando features desnecessárias
+df_cart.cobr <- 
+    df_cart.cobr %>%
+    select(CONTRATO = RegAsc, # contrato (sem hifen)
+           setor = Setor, 
+           idade = Idade,
+           fx.idade = Faixa.de.Idade,
+           cep = CEP,
+           dt.abertcad = Dt.Estabelecimento.Abertura.Cadastro, # em formato int. Passar a character (talvez usar gsub para barras) e data 
+           equipe.vendas = Equipe.de.Vendas, 
+           los = N.mero.de.Campanhas..LOS., # numero de campanhas que participou. 19/ano -> tempo de atividade
+           fx.los = Faixa.de.LOS,
+           dt.enviocobr = Data.de.Envio.para.Cobran.a,
+           valor.pend = ValorPendencia
+           ) %>%
+    mutate(CONTRATO = paste0(substr(as.character(CONTRATO),1,5),"-", substr(as.character(CONTRATO),6,8))) # inserindo hifen no numero do contrato
+
+# acertando datas
+#x <-
+#    df_cart.cobr %>%
+#    mutate(dt.abertcad = strtrim(dt.abertcad,8)) %>%
+#    mutate(dt.abertcad = ifelse(nchar(dt.abertcad) == 7, paste0("0", dt.abertcad), dt.abertcad)) # primeiro força 8 caracteres
+
+# OK acima. FALTA: transformar em formato data!!
+#y <-
+#    x %>%
+#    mutate(dt.abertcad = paste0(substr(dt.abertcad,1,2), substr(dt.abertcad,3,4), substr(dt.abertcad,5,8))) # primeiro força 8 caracteres
+           
+df_cart.incobr <- 
+    df_cart.incobr %>%
+    select(CONTRATO = revendedora_id, # contrato (sem hifen)
+           setor = tb_setor_id,
+           cep = rev_cep,
+           ddd.rec = rev_ddd_recados,
+           ddd.res = rev_ddd_residencial,
+           ddd.com = rev_ddd_comercial,
+           ddd.cel = rev_ddd_celular,
+           tel.rec = rev_telefone_recado,
+           tel.res = rev_telefone_residencial,
+           tel.com = rev_telefone_comercial,
+           cel = rev_telefone_celular,
+           cpf = rev_cpf,
+           idade = Idade,
+           fx.idade = Faixa.de.Idade,
+           dt.abertcad = rev_dt_estabelecimento,
+           los = Los,
+           fx.los = Faixa.de.LOS,
+           est.civil = Estado.Civil,
+           email = rev_email,
+           valor.pend = valor_pendencia,
+           dt.envio = dt_envio
+    ) %>%
+    mutate(CONTRATO = paste0(substr(as.character(CONTRATO),1,5),"-", substr(as.character(CONTRATO),6,8))) # inserindo hifen no numero do contrato
+
+# seleciona somente as features desejadas
+df_cart.cobr <-
+    df_cart.cobr %>%
+    select(CONTRATO, idade, cep, los)
+df_cart.incobr <-
+    df_cart.incobr %>%
+    select(CONTRATO, idade, cep, los)
+
+# colocando novas features
+df_cart <- rbind(df_cart.cobr, df_cart.incobr)
+
+df_cart.quit <- left_join(df_quit, df_cart, by = "CONTRATO")
+df_cart.quit <- na.omit(df_cart.quit) 
+table(df_cart.quit$quitado)
+prop.table(table(df_cart.quit$quitado))
+
+# ATENÇÃO: a proporção de pagos e não pagos mudou ao filtrar os dados em relação aos totais passados
+# por isso, cuidado na criação da base de treino de replicar a mesmas proporção e, além disso,
+# repetir os testes nas duas condições
+```
+
+102.129 contratos na carteira com todos os atributos desejados para o modelo.
+
+### Análise Preliminar ###
+
+####Conceito####
+É considerado contrato quitado aquele onde o cliente pagou toda a dívida.
+
+
+```{r,echo=FALSE}
+t_prop <- prop.table(table(df_quit$Status))
+sprintf("TOTAL DA CARTEIRA ATIVA: %s %%",round(t_prop[1],4)*100)
+sprintf("TOTAL DA CARTEIRA QUITADA: %s %%",round(t_prop[3],4)*100)
+```
+
+### Criação do modelo ###
+Os dados acima foram usados para treinar um modelo estatístico que considera como os seguintes atributos da carteira afetam o resultado (pagamento):
+
++ dias de atraso
++ valor da dívida
++ idade
++ cep
++ los (número de campanhas participadas)
+
+### Validação do modelo escolhido ###
+Foi escolhido um modelo que implementa uma análise conhecida como Naive Bayes, que costuma apresentar bons resultados preditivos para um grande número de aplicações.
+O modelo foi validado, apresentando os  resultados de performance explicados abaixo.
+
+#### Gráficos de Performance ####
+A performance do modelo é medida a partir de 3 parâmetros:
+* Sensitividade - capacidade do modelo prever pagamento e ele realmente ser efetuado
+* Especificidade - capacidade do modelo detectar quem estava previso para pagar mas não paga
+* Acurácia balanceada - o resultado médio das performances acima
+* Área abaixo da curva ROC (explicada abaixo)
+
+```{r,echo=FALSE}
+
+# OBS: depois ver se diferente de tirar inativos da carteira
+# TB: estudar se features sao corelacionadas entre si!!!
+##############################################################
+
+class <- as.factor(df_cart.quit[,"quitado"]) # transformando em vetor de fatores de target
+class <- factor(class, levels = c("S","N")) # ordenando levels para "S" ser o primeiro
+
+descr <- df_cart.quit[,c(5,6,9:12)] # Obs: depois trocar Valor Devido por Faixa para ver se melhora o modelo!!
+    
+set.seed(1)
+inTrain <- createDataPartition(class, p = 3/4, list = FALSE)
+    
+trainDescr <- descr[inTrain,]
+testDescr  <- descr[-inTrain,]
+    
+trainClass <- class[inTrain]
+testClass  <- class[-inTrain]
+
+# REMOVENDO NEAR ZERO VARIANCE AND CORRELATIONS 
+    # (FOR CORRELATION, NUMERIC FEATURES ONLY)
+    ######################################################
+    trn_nzvar <- nearZeroVar(trainDescr, freqCut = 20, uniqueCut = 20)
+    tst_nzvar <- nearZeroVar(testDescr, freqCut = 20, uniqueCut = 20)
+    # removendo colunas que não passaram no teste
+    if(length(trn_nzvar) != 0  || length(tst_nzvar) != 0) {
+        trainDescr <- trainDescr[,-(trn_nzvar)]
+        testDescr <- testDescr[,-(tst_nzvar)]
+    }    
+    
+    # eliminando features com menor importância 
+    ###################################################
+    #trainTotal <- cbind(sexo = trainClass,trainDescr)
+    initial <- glm(pago ~ ., data = cbind(pago = trainClass,trainDescr), family = "binomial")
+    aic_o <- stepAIC(initial, direction = "both", trace = FALSE)
+    
+    #######################################
+    ## BUILDING AND TUNING MODELS
+    # O NAIVE BAYES PARECE Se MOSTROU MELHOR COMPARADO COM OS TESTADOS ABAIXO
+    # GBM, TBG, CTREE2, GLM
+    #######################################
+    control <- trainControl(method="repeatedcv", number=10, repeats=3,
+                            classProbs = TRUE,
+                            summaryFunction = twoClassSummary # comentar para uso com iris
+    )
+    nb_model <- train(trainDescr, trainClass, 
+                      #nbagg = 50,
+                      metric = "ROC",
+                      preProcess=c("center", "scale"),
+                      trControl=control,
+                      na.action=na.omit,
+                      method="nb")
+    
+    models_o <- list(nb = nb_model)
+    
+    # obtém probabilidades dos modelos
+    probValues <- extractProb(
+        models_o,
+        testX = testDescr,
+        testY = testClass)
+    
+    # confusion matrix
+    cf_o <- confusionMatrix(probValues$pred, probValues$obs)
+
+    # making a prediction object
+    pred_o <- prediction(probValues$S, probValues$obs)
+    
+    # ROC curve
+    roc.perf_o = performance(pred_o, measure = "tpr", x.measure = "fpr")
+    
+    
+    # RETORNAR AUC
+    roc.auc_o = performance(pred_o, measure = "auc")
+    auc <- roc.auc_o@y.values
+   
+    # crio data frame com as probabilidades do preditor (já ordenado)
+    #df_rank_o <- data.frame (my_pred = roc.perf_o@alpha.values[[1]])
+
+    # retorna lista para validação do modelo
+    l_model <- list(models_o,aic_o,cf_o, roc.perf_o, roc.auc_o, pred_o)
+    
+    
+    
+# l_model <- suppressWarnings(f_train_model(df_tidy))
+models <-  l_model[[1]] # modelo trans de caret
+aic <-  l_model[[2]] # Valor de AIC do modelo
+cf <-  l_model[[3]] # objeto confusion matrix
+roc.perf <-  l_model[[4]] # objeto performance de caret
+roc.auc <-  l_model[[5]] # valor de AUC de curva ROC
+pred <-  l_model[[6]] # valor de cutoff calculado (best balance)
+
+# obtém o valor de cutoff de best balance na curva ROC
+valor_cutoff <- suppressWarnings(f_opt_cut(roc.perf, pred)[3])
+
+#A matriz abaixo mostra a performance
+resampleHist(models$nb)
+
+# objeto confusion Matrix (devo diminuir false positive)
+print(cf$table)
+```
+
+*Sensitividade* = pagamentos previstos corretamente / total de pagamentos previstos como sucesso
+```{r,echo=FALSE}
+print(cf$byClass[1]) #Sensitivity
+```
+
+*Especificidade* = pagamentos previstos erroneamente / total de pagamentos previstos como sem sucesso
+```{r,echo=FALSE}
+print(cf$byClass[2]) #Sensitivity
+print(cf$byClass[8]) #Balanced Acuracy
+#print(cf$overall)
+```
+
+#### Curva ROC ####
+A curva ROC permite avaliar a performance de um modelo. O conceito é que a linha reta na diagonal representa uma escolha aleatória de acionamentos. A linha curva representa a performance do modelo. Quanto maior a área embaixo desta curva, melhor a performance do modelo para previr os clientes que pagarão.
+Também é possivel obter a partir desta curva qual a melhor probabilidade de corte balanceada. Ou seja, tomando os clientes acima desta probabilidade temos o melhor resultado esperado em obter pagamentos.
+
+```{r,echo=FALSE}
+# Plot roc. objects (para cada modelo)
+plot(roc.perf)
+abline(a=0, b= 1)
+# lift plot
+#roc.perf.lift = performance(pred, measure = "lift", x.measure = "rpp")
+#plot(roc.perf.lift)
+
+#print(aic$formula)
+#sprintf("AIC Cobravel: %.2f",aic$aic)
+#sprintf("Avon - %s : %.4f",roc.auc@y.name,roc.auc@y.values)
+#sprintf("Avon - Valor de Cutoff-ROC Best Balance : %.4f",valor_cutoff)
+
+t_prop <- prop.table(table(df_tidy$PAGO))
+sprintf("Área sobre a curva ROC: %s %%",round(as.numeric(roc.auc@y.values) * 100,2))
+```
+
+### Previsão de Pagamentos ###
+Aplicando o modelo aos clientes da carteira Avon que ainda não possuem pagamentos detectados, obtemos uma lista rankeda decrescente de acordo com a maior probabilidade de sucesso de obter pagamento.
+A lista gerada para esta execução do modelo originou um ranking com 19.648 acionamentos com a melhor probabilidade de obtenção de ao menos um pagamento.
+Abaixo estão algumas linhas do ranking gerado como exemplo.
+
+```{r,echo=FALSE}
+
+#l_uso <- suppressWarnings(f_prep_uso(df_carteira, df_pg))
+useDescr <- anti_join(df_carteira_in, df_pg_in,by=c("CONTRATO"))
+    useID <- useDescr[,1:2]
+    useDescr <- useDescr[,3:5]
+    
+    # retorna lista com:
+    # dataframe para identificar cliente por nro Contrato e tipo (cobrável, incobrável)
+    # dataframe com features de clientes que não pagaram para uso em previsão
+    l_uso <- list(id = useID, descr = useDescr)
+df_rank.prev <- suppressWarnings(f_previsao(l_model, l_uso))
+# filtrando por valor de cutoff
+df_rank.cutoff <-
+    df_rank.prev %>%
+    filter(probClass >= valor_cutoff)
+my.newdata <- 
+        df_rank.cutoff %>%
+        sample_n(10) %>%
+        arrange(desc(probClass))
+rownames(my.newdata) <- NULL
+knitr::kable(my.newdata[,1:3])
+```

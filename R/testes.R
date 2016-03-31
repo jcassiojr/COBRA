@@ -340,3 +340,55 @@ df_pg.contr <-
     distinct(CONTRATO) %>%
     select(-VlPag)
 
+# lendo base total nova enviada em 31-03-2016 por Andre Andrade
+df_base <- read.csv("./data/Base completa Clientes Agencia-31-03-2016.rpt", sep = "|", header = TRUE, stringsAsFactors = FALSE)
+# tirando contratos duplicados e ultima linha de totais
+df_base <-
+    df_base %>%
+    distinct((CONTRATO)) %>%
+    filter(!(grepl("afetadas", CARTEIRA)))
+# lendo base total nova enviada em 31-03-2016 por Andre Andrade com QUITADOS
+df_base_quit <- read.csv("./data/Base completa Clientes Agencia QUITADOS-31-03-2016.rpt", sep = "|", header = TRUE, stringsAsFactors = FALSE)
+# tirando contratos duplicados
+df_base_quit <-
+    df_base_quit %>%
+    distinct((CONTRATO)) %>%
+    filter(!(grepl("afetadas", CARTEIRA)))
+# vendo quantos são comuns aos dois arquivos
+#df_tst <- inner_join(df_base, df_base_quit, by = "CONTRATO")
+# confirmado acima que todos os quitados estão na base original
+
+# criar coluna quitado (S/N) na base original
+df_quit <- left_join(df_base, df_base_quit, by = "CONTRATO")
+
+# criando mais uma opção na coluna status = "quitado"
+df_quit <- 
+    df_quit %>%
+    mutate(Status.x = ifelse(!(is.na(Status.y)), "quitado", Status.x))
+
+
+# removendo as colunas duplicadas apos join
+df_quit <-
+    df_quit %>%
+    select(CARTEIRA.x,CONTRATO, TITUL_TRA.x, NOME.x,DIAS_ATRASO.x, VLSAL_CON.x, JUROS.x,
+           VLORI_TRA.x,SETOR.x,Status.x) %>%
+    rename(CARTEIRA = CARTEIRA.x,
+           TITUL_TRA = TITUL_TRA.x, 
+           NOME = NOME.x,
+           DIAS_ATRASO = DIAS_ATRASO.x, 
+           VLSAL_CON = VLSAL_CON.x, 
+           JUROS = JUROS.x,
+           VLORI_TRA = VLORI_TRA.x,
+           SETOR = SETOR.x,
+           Status = Status.x)
+table(df_quit$Status) # deve dar mesmo nro de linhas do df_base_quitado  
+
+# agora tenho o target quitado e posso aplicar o modelo!!!
+df_quit <-
+    df_quit %>%
+    mutate(quitado = ifelse(Status == "quitado", "S", "N"))
+table(df_quit$quitado)
+
+
+
+

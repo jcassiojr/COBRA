@@ -6,8 +6,8 @@ source("~/Documents/MyGit/COBRA/R/f_ccf_sms_pgto.R")
 source("~/Documents/MyGit/COBRA/R/f_le_sms.R")
 source("~/Documents/MyGit/COBRA/R/f_nacion_reg.R")
 
-registerDoMC(5) # parallel processing
-options(scipen=999) # removendo display de notação científica em R
+registerDoMC(8) # parallel processing
+options(scipen=999, digits = 2) # removendo display de notação científica em R
 # LE arquivos SMS
 ##########################################
 df_sms.2015 <- f_le_sms()
@@ -72,7 +72,6 @@ df_sms.cart <- inner_join(df_cart.incobr,df_sms.2015, by = "Celular")
 # conferir manualmente acima para ver se fez ok. Se sim, combinar, via contrato, com pgto
 # para modelo preditivo!!!!!!
 
-# FALTA: TESTAR COM ARQUIVO ABAIXO
 # df_pg <- read.xlsx2("./data/Dados Raw-04-12-2015-Pgtos Avon.xlsx", sheetIndex = 1, header = TRUE)
 
 df_pg <- read.csv("./data/Dados Raw-pgtos agencia 4c.csv", sep = ",", header = TRUE, 
@@ -106,6 +105,11 @@ rm(df_pg)
 # incorpora ao dataframe cart o pgto
 # cria data frame com sms identificados na carteira
 df_sms.cart.pg <- inner_join(df_sms.cart,df_pg.primpg, by = "contrato")
+
+# algumas estatísticas
+# distribuição de tipo de status de SMS por pagamento
+table(df_sms.cart.pg$Status)
+prop.table(table(df_sms.cart.pg$Status))
 
 # agora aplicar o modelo nos dados acima (1021 instâncias)
 # 1. criando atributo pgto = S/N

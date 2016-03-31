@@ -1,0 +1,430 @@
+---
+title: "Análise de Custo de SMS - Agência de Cobrança - DRAFT"
+author: "José Cassio"
+date: "Março 23, 2016"
+output:
+  html_document
+---
+
+![agileBIGDATA](./aBIG5.png)
+
+Este documento descreve a análise de custo de SMS realizada com o objetivo de reduzir os custos de SMS da **Agência de Cobrança Asserth**, baseado em dados de cobrança da Avon.
+
+#### Período Analisado ####
+
+Foram analisados os envios de SMS a clientes da carteira Avon enviados entre 01/07/2015 e 31/08/2015.
+
+#### Estratégia da Análise ####
+
+A partir de dados da carteira da Avon e de pagamentos efetuados, foi analisada a correlação entre os SMSs com confirmação de recebimento e pagamentos efetuados. Ou seja, a relação entre os SMSs confirmados e pagamentos detectados.
+
+#### Resultados Obtidos ####
+
+A partir das análises, foi verificado que o prazo médio entre o envio do SMS e a deteção de pagamentos é de aproximadamente 10 dias, sendo que a maior correlação entre SMS e pagamentos é para casos de SMS recebidos e confirmados pelo cliente.
+
+```{r,echo=FALSE, warning=FALSE}
+require("ggplot2", quietly = TRUE, warn.conflicts = FALSE)
+require("xlsx", quietly = TRUE, warn.conflicts = FALSE)
+require("lubridate", quietly = TRUE, warn.conflicts = FALSE)
+require("doMC", quietly = TRUE, warn.conflicts = FALSE)
+require("dplyr", quietly = TRUE, warn.conflicts = FALSE)
+require("grid", quietly = TRUE, warn.conflicts = FALSE)
+
+source("~/Documents/MyGit/COBRA/R/f_ccf_sms_pgto.R")
+source("~/Documents/MyGit/COBRA/R/f_le_sms.R")
+source("~/Documents/MyGit/COBRA/R/f_nacion_reg.R")
+
+registerDoMC(8) # parallel processing
+options(scipen=999) # removendo display de notação científica em R
+```
+
+```{r,echo=FALSE, warning=FALSE}
+# LE arquivos SMS
+##########################################
+df_sms.2015 <- f_le_sms()
+# transformando em caracter o celular
+df_sms.2015 <-
+    df_sms.2015 %>%
+    mutate(Celular = as.character(Celular))
+# eliminando números esquisitos: terminados em 0000
+df_sms.2015 <-
+    df_sms.2015 %>%
+    filter(!grepl("0000$",Celular))
+
+# preparando formato correto de datas para plot
+df_sms.2015$Enviado.em <- as.Date(df_sms.2015$Enviado.em, "%d/%m/%Y")
+
+# chama funcao passando o numero de acionamentos de sms desejado por celular
+nr.sms  <- 0 # número de acionamentos por celular para filtrar os dados. Se zero, seleciona tudo
+my.list <- f_ccf_sms_pgto(df_sms.2015, nr.sms)
+
+# CROSS CORRELATIONS
+#par(mfrow=c(1,3))
+#ccf(my.list[[5]]$acions.dia ,my.list[[5]]$pgto.dia, 
+#    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS Recebidos e NÃO Confirmados")
+
+#ccf(my.list[[6]]$acions.dia ,my.list[[6]]$pgto.dia, 
+#    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS Recebidos e Confirmados")
+
+#ccf(my.list[[7]]$acions.dia ,my.list[[7]]$pgto.dia, 
+#    na.action = na.pass, lag.max = 30, ylim = c(-0.1, 0.5), main = "SMS Total Recebidos")
+```
+
+```{r,echo=FALSE, warning=FALSE}
+# filtrando somente confirmados
+df_sms.2015.conf <-
+    df_sms.2015 %>%
+    filter(grepl("Entregue com Confirmação",Status))
+
+nacion.max <- 15 # número máximo de acionamentos para a geração dos plots abaixo
+#knitr::kable(head(df_acion))
+```
+
+#### Precisão dos Resultados por Região de DDD ####
+
+Abaixo são mostrados Os valores de Acurácia obtidos para cada região de DDD. Quanto maior o percentual, maoir a precisão obtida nos gráficos que seguem.
+
+```{r,echo=FALSE, warning=FALSE}
+#################################
+# DDD TODOS
+########
+ddd <- "^55"
+l_nacion <- f_nacion_reg(df_sms.2015.conf, ddd,nacion.max)
+pl_max_lag.BR <- l_nacion$plot.lag
+pl_max_corr.BR <- l_nacion$plot.acion
+my.df_max_corr.BR <- l_nacion$df.max.corr
+my.lm.n.acion.BR <- l_nacion$reg.lin
+my.df_nacion.cel <- l_nacion$nacion.cel
+# plot das correlações máximas por lag e por número de acionamentos
+#pushViewport(viewport(layout = grid.layout(1, 2)))
+#print(pl_max_lag.BR, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+#print(pl_max_corr.BR, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+
+# plot da correlação e valor de R squared
+
+# IMPORTANTE: O R Squared da correlação entre:
+#   valor de máximas correlações entre nro de sms x pagto, distribuídos por número de acionamentos e
+#   distribuição de número d eacionamentos
+# comprova relação direta e forte (> 70%) entre número de acionamentos x pagamentos efetuados
+my.lm.descr <-  summary(my.lm.n.acion.BR)
+sprintf("R Squared: %.3f",  my.lm.descr$r.squared)
+
+# plot das correlações permite ver agrupamento de lags para maior correlação nro acion x pgto
+# o plot permite visualmente identificar os lags com maior correlação com pgto, permitindo
+# planejar e entrada dos pagamentos no tempo após os acionamentos, por região
+#plot(my.df_max_corr.BR)
+```
+
+#### Melhor Número de Acionamento por Celular (por Região de DDD) ####
+
+A mesma análise acima, por região de DDD. Pode ser usado para refinar a estratégia de número de acionamento por celular por região.
+
+##### GRANDE SP #####
+
+```{r,echo=FALSE, warning=FALSE}
+# DDD CIDADE DE SP
+########
+ddd <- "^5511"
+l_nacion <- f_nacion_reg(df_sms.2015.conf, ddd,nacion.max)
+pl_max_lag.SPC <- l_nacion$plot.lag
+pl_max_corr.SPC <- l_nacion$plot.acion
+my.df_max_corr.SPC <- l_nacion$df.max.corr
+my.lm.n.acion.SPC <- l_nacion$reg.lin
+
+# plot das correlações máximas por lag e por número de acionamentos
+#pushViewport(viewport(layout = grid.layout(1, 2)))
+#print(pl_max_lag.SPC, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+#print(pl_max_corr.SPC, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
+
+# plot da correlação e valor de R squared
+my.lm.descr <-  summary(my.lm.n.acion.SPC)
+sprintf("R Squared: %.3f",  my.lm.descr$r.squared)
+
+# plot das correlações permite ver agrupamento de lags para maior correlação nro acion x pgto
+#plot(my.df_max_corr.SPC)
+
+```
+
+##### SP INTERIOR #####
+
+```{r,echo=FALSE, warning=FALSE}
+# DDD SP (INTERIOR)
+########
+ddd <- "^551[23456789]"
+l_nacion <- f_nacion_reg(df_sms.2015.conf, ddd,nacion.max)
+pl_max_lag.SPI <- l_nacion$plot.lag
+pl_max_corr.SPI <- l_nacion$plot.acion
+my.df_max_corr.SPI <- l_nacion$df.max.corr
+my.lm.n.acion.SPI <- l_nacion$reg.lin
+
+# plot das correlações máximas por lag e por número de acionamentos
+#pushViewport(viewport(layout = grid.layout(1, 2)))
+#print(pl_max_lag.SPI, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+#print(pl_max_corr.SPI, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
+
+# plot da correlação e valor de R squared
+my.lm.descr <-  summary(my.lm.n.acion.SPI)
+sprintf("R Squared: %.3f",  my.lm.descr$r.squared)
+
+# plot das correlações permite ver agrupamento de lags para maior correlação nro acion x pgto
+#plot(my.df_max_corr.SPI)
+
+```
+
+##### RJ e ES #####
+
+```{r,echo=FALSE, warning=FALSE}
+# DDD RJ, ES
+########
+ddd <- "^552"
+l_nacion <- f_nacion_reg(df_sms.2015.conf, ddd,nacion.max)
+pl_max_lag.RJ.ES <- l_nacion$plot.lag
+pl_max_corr.RJ.ES <- l_nacion$plot.acion
+my.df_max_corr.RJ.ES <- l_nacion$df.max.corr
+my.lm.n.acion.RJ.ES <- l_nacion$reg.lin
+
+# plot das correlações máximas por lag e por número de acionamentos
+#pushViewport(viewport(layout = grid.layout(1, 2)))
+#print(pl_max_lag.RJ.ES, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+#print(pl_max_corr.RJ.ES, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
+
+# plot da correlação e valor de R squared
+my.lm.descr <-  summary(my.lm.n.acion.RJ.ES)
+sprintf("R Squared: %.3f",  my.lm.descr$r.squared)
+
+# plot das correlações permite ver agrupamento de lags para maior correlação nro acion x pgto
+#plot(my.df_max_corr.RJ.ES)
+
+```
+
+##### MG #####
+
+```{r,echo=FALSE, warning=FALSE}
+ddd <- "^553"
+l_nacion <- f_nacion_reg(df_sms.2015.conf, ddd, nacion.max)
+pl_max_lag.MG <- l_nacion$plot.lag
+pl_max_corr.MG <- l_nacion$plot.acion
+my.df_max_corr.MG <- l_nacion$df.max.corr
+my.lm.n.acion.MG <- l_nacion$reg.lin
+
+# plot das correlações máximas por lag e por número de acionamentos
+#pushViewport(viewport(layout = grid.layout(1, 2)))
+#print(pl_max_lag.MG, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+#print(pl_max_corr.MG, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
+
+# plot da correlação e valor de R squared
+
+# IMPORTANTE: O R Squared da correlação entre:
+#   valor de máximas correlações entre nro de sms x pagto, distribuídos por número de acionamentos e
+#   distribuição de número d eacionamentos
+# comprova relação direta e forte (> 70%) entre número de acionamentos x pagamentos efetuados
+my.lm.descr <-  summary(my.lm.n.acion.MG)
+sprintf("R Squared: %.3f",  my.lm.descr$r.squared)
+
+# plot das correlações permite ver agrupamento de lags para maior correlação nro acion x pgto
+#plot(my.df_max_corr.MG)
+
+```
+
+##### SC e PR #####
+
+```{r,echo=FALSE, warning=FALSE}
+# DDD SC, PR
+########
+ddd <- "^554"
+l_nacion <- f_nacion_reg(df_sms.2015.conf, ddd,nacion.max)
+pl_max_lag.SC.PR <- l_nacion$plot.lag
+pl_max_corr.SC.PR <- l_nacion$plot.acion
+my.df_max_corr.SC.PR <- l_nacion$df.max.corr
+my.lm.n.acion.SC.PR <- l_nacion$reg.lin
+
+# plot das correlações máximas por lag e por número de acionamentos
+#pushViewport(viewport(layout = grid.layout(1, 2)))
+#print(pl_max_lag.SC.PR, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+#print(pl_max_corr.SC.PR, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
+
+# plot da correlação e valor de R squared
+my.lm.descr <-  summary(my.lm.n.acion.SC.PR)
+sprintf("R Squared: %.3f",  my.lm.descr$r.squared)
+
+# plot das correlações permite ver agrupamento de lags para maior correlação nro acion x pgto
+#plot(my.df_max_corr.SC.PR)
+```
+
+##### RS #####
+
+```{r,echo=FALSE, warning=FALSE}
+# DDD RS
+########
+ddd <- "^555"
+l_nacion <- f_nacion_reg(df_sms.2015.conf, ddd,nacion.max)
+pl_max_lag.RS <- l_nacion$plot.lag
+pl_max_corr.RS <- l_nacion$plot.acion
+my.df_max_corr.RS <- l_nacion$df.max.corr
+my.lm.n.acion.RS <- l_nacion$reg.lin
+
+# plot das correlações máximas por lag e por número de acionamentos
+#pushViewport(viewport(layout = grid.layout(1, 2)))
+#print(pl_max_lag.RS, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+#print(pl_max_corr.RS, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
+
+# plot da correlação e valor de R squared
+my.lm.descr <-  summary(my.lm.n.acion.RS)
+sprintf("R Squared: %.3f",  my.lm.descr$r.squared)
+
+# plot das correlações permite ver agrupamento de lags para maior correlação nro acion x pgto
+#plot(my.df_max_corr.RS)
+
+```
+
+##### AC, RR, MS, TO, GO #####
+
+```{r,echo=FALSE, warning=FALSE}
+# DDD AC, RD, MS, TO, GO
+########
+ddd <- "^556"
+l_nacion <- f_nacion_reg(df_sms.2015.conf, ddd,nacion.max)
+pl_max_lag.CO <- l_nacion$plot.lag
+pl_max_corr.CO <- l_nacion$plot.acion
+my.df_max_corr.CO <- l_nacion$df.max.corr
+my.lm.n.acion.CO <- l_nacion$reg.lin
+
+# plot das correlações máximas por lag e por número de acionamentos
+#pushViewport(viewport(layout = grid.layout(1, 2)))
+#print(pl_max_lag.CO, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+#print(pl_max_corr.CO, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
+
+# plot da correlação e valor de R squared
+my.lm.descr <-  summary(my.lm.n.acion.CO)
+sprintf("R Squared: %.3f",  my.lm.descr$r.squared)
+
+# plot das correlações permite ver agrupamento de lags para maior correlação nro acion x pgto
+#plot(my.df_max_corr.CO)
+
+```
+
+##### BA e SE #####
+
+```{r,echo=FALSE, warning=FALSE}
+ddd <- "^557"
+l_nacion <- f_nacion_reg(df_sms.2015.conf, ddd,nacion.max)
+pl_max_lag.BA.SE <- l_nacion$plot.lag
+pl_max_corr.BA.SE <- l_nacion$plot.acion
+my.df_max_corr.BA.SE <- l_nacion$df.max.corr
+my.lm.n.acion.BA.SE <- l_nacion$reg.lin
+
+    # plot das correlações máximas por lag e por número de acionamentos
+#pushViewport(viewport(layout = grid.layout(1, 2)))
+#print(pl_max_lag.BA.SE, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+#print(pl_max_corr.BA.SE, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
+
+# plot da correlação e valor de R squared
+my.lm.descr <-  summary(my.lm.n.acion.BA.SE)
+sprintf("R Squared: %.3f",  my.lm.descr$r.squared)
+
+#plot(my.df_max_corr.BA.SE)
+
+```
+
+##### PI, RN, CE, PB, PE, AL #####
+
+```{r,echo=FALSE, warning=FALSE}
+# DDD PI, RN, CE, PB, PE, AL
+########
+ddd <- "^558"
+l_nacion <- f_nacion_reg(df_sms.2015.conf, ddd,nacion.max)
+pl_max_lag.NE <- l_nacion$plot.lag
+pl_max_corr.NE <- l_nacion$plot.acion
+my.df_max_corr.NE <- l_nacion$df.max.corr
+my.lm.n.acion.NE <- l_nacion$reg.lin
+
+# plot das correlações máximas por lag e por número de acionamentos
+#pushViewport(viewport(layout = grid.layout(1, 2)))
+#print(pl_max_lag.NE, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+#print(pl_max_corr.NE, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
+
+# plot da correlação e valor de R squared
+my.lm.descr <-  summary(my.lm.n.acion.NE)
+sprintf("R Squared: %.3f",  my.lm.descr$r.squared)
+
+#plot(my.df_max_corr.NE)
+```
+
+##### AM, RR, PA, AM, MA #####
+
+```{r,echo=FALSE, warning=FALSE}
+# DDD AM, RR, PA, AM, MA
+########
+ddd <- "^559"
+l_nacion <- f_nacion_reg(df_sms.2015.conf, ddd,nacion.max)
+pl_max_lag.NO <- l_nacion$plot.lag
+pl_max_corr.NO <- l_nacion$plot.acion
+my.df_max_corr.NO <- l_nacion$df.max.corr
+my.lm.n.acion.NO <- l_nacion$reg.lin
+
+# plot das correlações máximas por lag e por número de acionamentos
+#pushViewport(viewport(layout = grid.layout(1, 2)))
+#print(pl_max_lag.NO, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+#print(pl_max_corr.NO, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
+
+# plot da correlação e valor de R squared
+my.lm.descr <-  summary(my.lm.n.acion.NO)
+sprintf("R Squared: %.3f",  my.lm.descr$r.squared)
+
+#plot(my.df_max_corr)
+
+```
+
+```{r,echo=FALSE, warning=FALSE}
+pushViewport(viewport(layout = grid.layout(3, 4)))
+print(pl_max_corr.SPC, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+print(pl_max_corr.SPI, vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
+print(pl_max_corr.RJ.ES, vp = viewport(layout.pos.row = 1, layout.pos.col = 3))
+print(pl_max_corr.MG, vp = viewport(layout.pos.row = 1, layout.pos.col = 4))
+print(pl_max_corr.SC.PR, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
+print(pl_max_corr.RS, vp = viewport(layout.pos.row = 2, layout.pos.col = 2))
+print(pl_max_corr.CO, vp = viewport(layout.pos.row = 2, layout.pos.col = 3))
+print(pl_max_corr.BA.SE, vp = viewport(layout.pos.row = 2, layout.pos.col = 4))
+print(pl_max_corr.NE, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))
+print(pl_max_corr.NO, vp = viewport(layout.pos.row = 3, layout.pos.col = 2))
+
+
+```
+
+#### Análise de Redução de Custos de SMS ####
+
+Segundo os resultados da análise realizadas, o melhor *custo x benefício* em relação ao número de acionamentos para envio de SMSs se dá para número de acionamentos confirmados em torno de 8 a 9 por celular.
+
+O envio de SMSs por celular maior que este valor acarreta gastos desnecessários (abaixo alguns valores obtidos com os SMSs analisados no período), por não resultarem em aumento de pagamentos.
+O envio de SMSs menores que estes valores, apesar de reduzir os custos, não resulta na melhor performance de pagamentos.
+
+```{r,echo=FALSE, warning=FALSE}
+df_sms.2015.cel <-
+    df_sms.2015 %>%
+    group_by(Celular) %>%
+    summarise(acions.dia = n())
+
+df_sms_custos <-
+    df_sms.2015.cel %>%
+    group_by(acions.dia) %>%
+    summarise(rep.nr.acion = sum(acions.dia))
+
+total.sms <-  sum(df_sms_custos$rep.nr.acion)
+
+df_sms_custos.sub <- subset(df_sms_custos, acions.dia > 8)
+total.sms.maior8 <-  sum(df_sms_custos.sub$rep.nr.acion)
+sprintf("Período avaliado: 01/07/2015 a 31/08/2015")
+sprintf("Total de SMS enviados ao mesmo celular: %d, Custo: R$ %.2f", 
+        total.sms, total.sms * 0.05)
+sprintf("Total de SMS enviados mais de 8 vezes ao mesmo celular: %d, Custo: R$ %.2f", 
+        total.sms.maior8, total.sms.maior8 * 0.05)
+sprintf("Economia estimada -> %.2f %%", 
+        (total.sms.maior8/total.sms)*100)
+```
+
+#### Conclusões ####
+
+Ao menos para aquelas regiões onde a precião da análise foi boa (maior ou igual a 60 %), o melhor custo x benefício de obtenção de pagamento se dá caso a estratégia contemple os acionamentos abaixo por celular:
+
++ Grande São Paulo
+    + de 8 a 12 acionamentos por SMS confirmados por celular

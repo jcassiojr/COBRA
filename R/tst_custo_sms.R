@@ -4,14 +4,15 @@ df_sms.2015.cel <-
     group_by(Celular) %>%
     summarise(acions.dia = n())
 
-x <-
+df_sms_custos <-
     df_sms.2015.cel %>%
     group_by(acions.dia) %>%
     summarise(rep.nr.acion = sum(acions.dia))
-total.sms <-  sum(x$rep.nr.acion)
 
-x.sub <- subset(x, acions.dia > 8)
-total.sms.maior8 <-  sum(x.sub$rep.nr.acion)
+total.sms <-  sum(df_sms_custos$rep.nr.acion)
+
+df_sms_custos.sub <- subset(df_sms_custos, acions.dia > 8)
+total.sms.maior8 <-  sum(df_sms_custos.sub$rep.nr.acion)
 sprintf("Período avaliado: 01/07/2015 a 31/08/2015")
 sprintf("Total de SMS enviados ao mesmo celular: %d, Custo: R$ %.2f", 
         total.sms, total.sms * 0.05)

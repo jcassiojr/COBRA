@@ -4,11 +4,11 @@
 # output: lista com os plots gerados para acionamento total, confirmado e não confirmado,
 # dataframes para acionamentos total, confirmados e não confirmados a serem aplicados a
 # funcão ccf()
-require("ggplot2")
-require("dplyr")
-require("xlsx")
-require("lubridate")
-require("grid")
+#require("ggplot2")
+#require("dplyr")
+#require("xlsx")
+#require("lubridate")
+#require("grid")
 
 f_ccf_sms_pgto <- function(in.df_sms.2015, in.num.sms) {
     #source("~/Documents/MyGit/COBRA/R/f_le_sms.R")

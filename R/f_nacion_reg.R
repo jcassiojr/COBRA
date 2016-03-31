@@ -74,7 +74,7 @@ f_nacion_reg <- function(df_sms.2015.in, ddd.in, nacion.max.in) {
 
     pl_max_acion <- ggplot(my.df_max_corr, aes(n.acion, corr)) + geom_line() + geom_smooth() +
         xlab("# acionamentos") + ylab("correlação") + 
-        ggtitle(paste0("Máximo de Pgtos - SMS confirmados - DDD: ", ddd.in))
+        ggtitle(paste0("DDD: ", ddd.in))
     
     #pushViewport(viewport(layout = grid.layout(1, 2)))
     #print(pl_max_lag, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
