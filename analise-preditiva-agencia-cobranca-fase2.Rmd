@@ -24,16 +24,15 @@ Os arquivos acima foram preparados, gerando:
 #require("lubridate", quietly = TRUE, warn.conflicts = FALSE)
 require("caret", quietly = TRUE, warn.conflicts = FALSE)
 #require("gplots", quietly = TRUE, warn.conflicts = FALSE)
-#require("ROCR", quietly = TRUE, warn.conflicts = FALSE) # aqui gera comentários no Rmd
+require("ROCR", quietly = TRUE, warn.conflicts = FALSE) # aqui gera comentários no Rmd
 require("doMC", quietly = TRUE, warn.conflicts = FALSE)
 #require("MASS", quietly = TRUE, warn.conflicts = FALSE)
 require("dplyr", quietly = TRUE, warn.conflicts = FALSE)
 #require("corrplot", quietly = TRUE, warn.conflicts = FALSE)
-#require("klaR", quietly = TRUE, warn.conflicts = FALSE)
+require("klaR", quietly = TRUE, warn.conflicts = FALSE)
 
 source("~/Documents/MyGit/COBRA/R/f_opt_cut.R")
-source("~/Documents/MyGit/COBRA/R/f_prep_uso.R")
-source("~/Documents/MyGit/COBRA/R/f_previsao.R")
+
 # general options
 options(digits=2)  # the default is 7, but it's more than I want now
 
@@ -384,21 +383,52 @@ A lista gerada para esta execução do modelo originou um ranking com 19.648 aci
 Abaixo estão algumas linhas do ranking gerado como exemplo.
 
 ```{r,echo=FALSE}
+# PREPARACAO PARA USO 
+#######################
 
 #l_uso <- suppressWarnings(f_prep_uso(df_carteira, df_pg))
-useDescr <- anti_join(df_carteira_in, df_pg_in,by=c("CONTRATO"))
-    useID <- useDescr[,1:2]
-    useDescr <- useDescr[,3:5]
+# selecionar clientes para uso que estejam ativos e não quitados
+useDescr <- 
+    df_cart.quit %>%
+    filter(Status == "Ativo" & quitado == "N")
+
+    useID <- useDescr[,2]
+    useDescr <- useDescr[,c(5,6,9:12)]
     
     # retorna lista com:
     # dataframe para identificar cliente por nro Contrato e tipo (cobrável, incobrável)
     # dataframe com features de clientes que não pagaram para uso em previsão
-    l_uso <- list(id = useID, descr = useDescr)
-df_rank.prev <- suppressWarnings(f_previsao(l_model, l_uso))
+    #l_uso <- list(id = useID, descr = useDescr)
+
+    
+    #df_rank.prev <- suppressWarnings(f_previsao(l_model, l_uso))
+    
+    # obtem os dados de identificação do cliente e de features
+    ##########################################################
+    #useID <- l_uso_in[[1]]
+    #useDescr <- l_uso_in[[2]]
+    
+    # obtendo probabilidades da classificação para pago = S
+    l_probs <- predict(l_model[[1]], useDescr, type = "prob")
+    
+    # concatenando probabilidades com identificação do cliente Avon
+    # alteracao: incluindo valor da divida para usar como corte
+    df_probs <- data.frame(ID = useID, divida = useDescr$VALOR.DEVIDO, probClass = l_probs[[1]]$S)
+    
+    # ordenando por maior probabilidade
+    df_rank.prev <-
+        df_probs %>%
+        arrange(desc(probClass))
+    
+    
 # filtrando por valor de cutoff
 df_rank.cutoff <-
     df_rank.prev %>%
     filter(probClass >= valor_cutoff)
+# por terem muitos true negatives, a probabilidade otima ficou muito baixa?????
+df_rank.maior60 <-
+    df_rank.prev %>%
+    filter(probClass >= .6)
 my.newdata <- 
         df_rank.cutoff %>%
         sample_n(10) %>%
